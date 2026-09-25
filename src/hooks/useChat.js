@@ -4,7 +4,6 @@ import { makeClientId } from '../lib/ids';
 import { parseSSE }   from '../lib/sse';
 import {
     createWorkflowState,
-    getWorkflowCurrentStep,
     getWorkflowDefinition,
     getNextWorkflowStep,
     getPreviousWorkflowStep,

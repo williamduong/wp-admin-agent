@@ -27,7 +27,7 @@ function findLatestQueuedTask(messages) {
 
 export default function ChatWidget({ isOpen, onToggle }) {
     const {
-        messages, isLoading, activeToolName, sessionUsage, apiHistory, conversationId,
+        messages, isLoading, activeToolName, sessionUsage, conversationId,
         pendingConfirmation, confirmPendingAction, cancelPendingAction,
         pendingNavUrl, clearNavUrl,
         activeWorkflow, startWorkflow, cancelWorkflow, updateWorkflowAnswer,
