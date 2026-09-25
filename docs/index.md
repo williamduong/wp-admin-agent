@@ -2,6 +2,8 @@
 
 This documentation covers installation, day-to-day use, architecture, security, development, and the disposable Google Cloud demo.
 
+Public showcase: [WP Admin Agent Free on Cloud Run](https://wp-admin-agent-showcase-cd6tjmxetq-as.a.run.app/). It uses fake data; administrator access remains private.
+
 ## Start here
 
 - [Getting Started](getting-started.md) — install, configure a provider, and complete a first safe workflow.

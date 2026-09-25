@@ -80,6 +80,9 @@ $navigate_map = [
                                 <option value="anthropic" <?php selected($provider,'anthropic'); ?>>Anthropic (Claude)</option>
                                 <option value="gemini"    <?php selected($provider,'gemini'); ?>>Google Gemini</option>
                                 <option value="ollama"    <?php selected($provider,'ollama'); ?>>Ollama (Local)</option>
+                                <?php if (wp_get_environment_type() !== 'production'): ?>
+                                    <option value="fake" <?php selected($provider,'fake'); ?>>Deterministic Showcase (no external API)</option>
+                                <?php endif; ?>
                             </select>
                         </td>
                     </tr>
@@ -147,6 +150,12 @@ $navigate_map = [
                                 Docker/wp-env local: <code>http://host.docker.internal:11434</code><br>
                                 Private network / another host: <code>http://your-ollama-host:11434</code>
                             </p>
+                        </td>
+                    </tr>
+                    <tr id="row-fake" <?php echo $provider !== 'fake' ? 'style="display:none"' : ''; ?>>
+                        <th>Showcase mode</th>
+                        <td>
+                            <p class="description">Uses bundled deterministic fixtures. No prompt, credential, or site data is sent to an external AI provider.</p>
                         </td>
                     </tr>
                     <tr>
@@ -393,7 +402,7 @@ let currentModel       = <?php echo wp_json_encode($model); ?>;
 
 function waaOnProviderChange(p) {
     currentProvider = p;
-    ['anthropic','gemini','ollama'].forEach(id => {
+    ['anthropic','gemini','ollama','fake'].forEach(id => {
         const row = document.getElementById('row-' + id);
         if (row) {
             row.style.display = (p === id) ? '' : 'none';

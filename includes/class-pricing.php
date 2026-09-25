@@ -36,6 +36,9 @@ class WAA_Pricing {
             'mistral'         => ['label' => 'Mistral 7B',         'ctx' =>  32000, 'in' => 0, 'out' => 0],
             'phi4'            => ['label' => 'Phi-4 14B',          'ctx' =>  16000, 'in' => 0, 'out' => 0],
         ],
+        'fake' => [
+            'runtime-v1' => ['label' => 'Deterministic Showcase (no external API)', 'ctx' => 32768, 'in' => 0, 'out' => 0],
+        ],
     ];
 
     public static function get_models(string $provider): array {

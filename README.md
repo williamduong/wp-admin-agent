@@ -18,6 +18,10 @@ This repository contains the GPL-licensed Free edition. A separate Pro add-on pr
 
 ## Product tour
 
+Try the public, fake-data showcase at [wp-admin-agent-showcase-cd6tjmxetq-as.a.run.app](https://wp-admin-agent-showcase-cd6tjmxetq-as.a.run.app/). The showcase does not publish administrator credentials or contain an AI-provider key.
+
+![Public Cloud Run showcase](docs/images/00-cloud-run-showcase.png)
+
 ![Assistant chat panel](docs/images/02-ai-assistant-chat.png)
 
 ![Tool registry](docs/images/04-tool-registry.png)

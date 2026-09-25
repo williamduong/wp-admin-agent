@@ -44,7 +44,7 @@ INST;
         $slug = sanitize_file_name($this->fixture);
         $path = apply_filters(
             'waa_fake_provider_fixture_path',
-            WAA_PLUGIN_DIR . 'tests/php/fixtures/fake-provider/' . $slug . '.json',
+            WAA_PLUGIN_DIR . 'includes/fixtures/fake-provider/' . $slug . '.json',
             $slug
         );
 
