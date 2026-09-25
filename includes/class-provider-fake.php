@@ -67,16 +67,13 @@ INST;
         for ($i = count($messages) - 1; $i >= 0; $i--) {
             $message = $messages[$i];
 
-            if ($last_user === '' && ($message['role'] ?? '') === 'user') {
+            if (($message['role'] ?? '') === 'user') {
                 $last_user = (string) ($message['content'] ?? '');
+                break;
             }
 
             if ($last_tool_name === '' && ($message['role'] ?? '') === 'tool') {
                 $last_tool_name = (string) ($message['tool_name'] ?? '');
-            }
-
-            if ($last_user !== '' && $last_tool_name !== '') {
-                break;
             }
         }
 
