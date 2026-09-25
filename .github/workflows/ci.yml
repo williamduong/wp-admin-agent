@@ -1,0 +1,39 @@
+name: Free plugin CI
+
+on:
+  push:
+  pull_request:
+
+permissions:
+  contents: read
+
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: npm
+      - uses: shivammathur/setup-php@v2
+        with:
+          php-version: '8.2'
+      - name: Install JavaScript dependencies
+        run: npm ci
+      - name: Lint frontend
+        run: npm run lint
+      - name: Test frontend
+        run: npm run test:js
+      - name: Build frontend
+        run: npm run build
+      - name: Check PHP syntax
+        shell: bash
+        run: find . -name '*.php' -not -path './vendor/*' -print0 | xargs -0 -n1 php -l
+      - name: Build installable ZIP
+        shell: pwsh
+        run: ./scripts/package-free.ps1
+      - uses: actions/upload-artifact@v4
+        with:
+          name: wp-admin-agent
+          path: dist/*.zip
