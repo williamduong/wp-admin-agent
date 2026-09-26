@@ -6,7 +6,7 @@ defined('ABSPATH') || exit;
  * Safely downloads a remote resource (image, file) via URL.
  *
  * Returns metadata + a local temp path. Caller is responsible for
- * moving the file and cleaning up via unlink($result['path']).
+ * moving the file and cleaning up via wp_delete_file($result['path']).
  */
 class WAA_Resource_Fetcher {
     private const MAX_BYTES = 5 * 1024 * 1024; // 5 MB
@@ -25,7 +25,7 @@ class WAA_Resource_Fetcher {
         $url = esc_url_raw($url);
 
         if (!filter_var($url, FILTER_VALIDATE_URL)) {
-            throw new RuntimeException("Invalid URL: $url");
+            throw new RuntimeException('Invalid URL: ' . esc_html($url));
         }
 
         $scheme = wp_parse_url($url, PHP_URL_SCHEME);
@@ -41,7 +41,7 @@ class WAA_Resource_Fetcher {
         ]);
 
         if (is_wp_error($head)) {
-            throw new RuntimeException("HEAD request failed: " . $head->get_error_message());
+            throw new RuntimeException('HEAD request failed: ' . esc_html($head->get_error_message()));
         }
 
         $head_code = wp_remote_retrieve_response_code($head);
@@ -51,41 +51,28 @@ class WAA_Resource_Fetcher {
             $this->validate_headers(wp_remote_retrieve_headers($head));
         }
 
-        // Full download
-        $response = wp_remote_get($url, [
-            'timeout'    => 30,
-            'user-agent' => 'WordPress/' . get_bloginfo('version') . '; WAA-Bot',
-            'redirection' => 3,
-        ]);
-
-        if (is_wp_error($response)) {
-            throw new RuntimeException("Download failed: " . $response->get_error_message());
-        }
-
-        $code = wp_remote_retrieve_response_code($response);
-        if ($code !== 200) {
-            throw new RuntimeException("Remote server returned HTTP $code");
-        }
-
-        $this->validate_headers(wp_remote_retrieve_headers($response));
-
-        $body = wp_remote_retrieve_body($response);
-        if (strlen($body) > self::MAX_BYTES) {
-            throw new RuntimeException("File exceeds size limit (" . (self::MAX_BYTES / 1024 / 1024) . " MB).");
-        }
-
         if (!function_exists('wp_tempnam')) {
             require_once ABSPATH . 'wp-admin/includes/file.php';
         }
-        $tmp = wp_tempnam($url);
-        file_put_contents($tmp, $body);
+        $tmp = download_url($url, 30);
+        if (is_wp_error($tmp)) {
+            throw new RuntimeException('Download failed: ' . esc_html($tmp->get_error_message()));
+        }
 
-        $content_type_header = strtok(wp_remote_retrieve_header($response, 'content-type') ?: '', ';');
+        $size = filesize($tmp);
+        if ($size === false || $size > self::MAX_BYTES) {
+            wp_delete_file($tmp);
+            throw new RuntimeException('File exceeds the 5 MB size limit.');
+        }
+
+        $content_type_header = $head_code === 200
+            ? (string) strtok(wp_remote_retrieve_header($head, 'content-type') ?: '', ';')
+            : '';
         $mime = $this->detect_mime($tmp, $url, $content_type_header);
 
         if (!in_array($mime, self::ALLOWED_MIME, true)) {
-            unlink($tmp);
-            throw new RuntimeException("File type '$mime' is not allowed. Accepted: " . implode(', ', self::ALLOWED_MIME));
+            wp_delete_file($tmp);
+            throw new RuntimeException('File type ' . esc_html($mime) . ' is not allowed.');
         }
 
         $filename = $this->extract_filename($url, $mime);
@@ -94,7 +81,7 @@ class WAA_Resource_Fetcher {
             'path'     => $tmp,
             'mime'     => $mime,
             'filename' => $filename,
-            'size'     => strlen($body),
+            'size'     => (int) $size,
         ];
     }
 
