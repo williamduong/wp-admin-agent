@@ -35,7 +35,7 @@ class WAA_Tool_Wordfence_Get_Scan_Results extends WAA_Tool_Base {
 
         global $wpdb;
         $limit  = min(100, max(1, (int) ($input['limit'] ?? 20)));
-        $status = $input['status'] ?? 'new';
+        $status = sanitize_key($input['status'] ?? 'new');
 
         $table = $wpdb->prefix . 'wfIssues';
         if ($wpdb->get_var($wpdb->prepare('SHOW TABLES LIKE %s', $table)) !== $table) {
@@ -44,12 +44,12 @@ class WAA_Tool_Wordfence_Get_Scan_Results extends WAA_Tool_Base {
 
         if ($status === 'all') {
             $rows = $wpdb->get_results(
-                $wpdb->prepare("SELECT * FROM `$table` ORDER BY severity DESC, time DESC LIMIT %d", $limit),
+                $wpdb->prepare("SELECT * FROM %i ORDER BY severity DESC, time DESC LIMIT %d", $table, $limit),
                 ARRAY_A
             );
         } else {
             $rows = $wpdb->get_results(
-                $wpdb->prepare("SELECT * FROM `$table` WHERE status = %s ORDER BY severity DESC, time DESC LIMIT %d", $status, $limit),
+                $wpdb->prepare("SELECT * FROM %i WHERE status = %s ORDER BY severity DESC, time DESC LIMIT %d", $table, $status, $limit),
                 ARRAY_A
             );
         }
