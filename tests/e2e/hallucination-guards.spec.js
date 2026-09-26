@@ -1,7 +1,7 @@
-const { test, expect } = require('@playwright/test');
+import { test, expect } from '@playwright/test';
 
 async function loginToAdminAgent(page) {
-    await page.goto('/wp-admin/options-general.php?page=wp-admin-agent', { waitUntil: 'networkidle' });
+    await page.goto('/wp-admin/admin.php?page=wp-admin-agent', { waitUntil: 'networkidle' });
 
     if (page.url().includes('wp-login.php')) {
         await page.fill('#user_login', 'admin');
