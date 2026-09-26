@@ -14,6 +14,7 @@
     "test:js:runtime": "vitest run tests/js/lib/sse.test.js tests/js/hooks/useChat.test.js --coverage --coverage.include=src/lib/sse.js --coverage.include=src/hooks/useChat.js",
     "test:js": "vitest run tests/js --coverage",
     "test:e2e": "playwright test",
+    "test:e2e:mocked": "playwright test --config=playwright.mocked.config.js",
     "lint": "eslint src --ext .js,.jsx"
   },
   "devDependencies": {
