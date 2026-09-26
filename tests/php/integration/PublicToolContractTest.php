@@ -74,9 +74,19 @@ class PublicToolContractTest extends WP_UnitTestCase {
         }
         wp_set_current_user($admin_id);
 
+        $required_inputs = [
+            'create_draft_post' => ['title' => 'Contract test', 'content' => 'Safe draft content'],
+            'navigate' => ['page' => 'plugins.php'],
+            'search_themes' => ['query' => 'portfolio'],
+            'search_icon' => ['query' => 'robot'],
+        ];
+
         foreach ($this->public_tools() as $tool) {
             $name = $tool->get_name();
-            $invalid = $tool->validate_input(['unexpected_private_field' => true]);
+            $invalid = $tool->validate_input(array_merge(
+                $required_inputs[$name] ?? [],
+                ['unexpected_private_field' => true]
+            ));
             $this->assertWPError($invalid, "Unknown input was accepted by {$name}");
             $this->assertSame('tool_input_unknown', $invalid->get_error_code(), "Wrong validation error for {$name}");
         }
