@@ -102,6 +102,38 @@ class RestApiSafetyTest extends WP_UnitTestCase {
         $this->assertSame($persisted_history, $resolved);
     }
 
+    public function test_conversations_are_isolated_between_administrators(): void {
+        global $wpdb;
+
+        $owner_id = self::factory()->user->create(['role' => 'administrator']);
+        $other_id = self::factory()->user->create(['role' => 'administrator']);
+        wp_set_current_user($owner_id);
+
+        $wpdb->insert(WAA_TABLE_CONVERSATIONS, [
+            'user_id' => $owner_id,
+            'title' => 'Owner private conversation',
+            'messages' => wp_json_encode([
+                'messages' => [['role' => 'user', 'content' => 'owner-only content']],
+                'history' => [],
+                'usage' => [],
+                'meta' => ['archived' => false],
+            ]),
+        ]);
+        $conversation_id = (int) $wpdb->insert_id;
+
+        wp_set_current_user($other_id);
+
+        $list_response = rest_get_server()->dispatch(new WP_REST_Request('GET', '/wp-admin-agent/v1/conversations'));
+        $listed_titles = array_map(static fn($row) => $row->title, $list_response->get_data());
+        $this->assertNotContains('Owner private conversation', $listed_titles);
+
+        $get_request = new WP_REST_Request('GET', '/wp-admin-agent/v1/conversations/' . $conversation_id);
+        $get_request->set_param('id', $conversation_id);
+        $get_response = rest_get_server()->dispatch($get_request);
+        $this->assertSame(404, $get_response->get_status());
+        $this->assertSame([], $this->api->resolve_history([], $conversation_id));
+    }
+
     public function test_restored_conversation_history_can_continue_runtime_loop_with_fake_provider(): void {
         global $wpdb;
 

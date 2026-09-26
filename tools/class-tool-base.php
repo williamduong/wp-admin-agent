@@ -67,9 +67,22 @@ abstract class WAA_Tool_Base {
         }
 
         if ($type === 'string') {
+            $minimum = max(0, (int) ($schema['minLength'] ?? 0));
             $limit = min(10000, (int) ($schema['maxLength'] ?? 10000));
+            if (strlen($value) < $minimum) {
+                return new WP_Error('tool_input_length', "$path is shorter than the minimum length.");
+            }
             if (strlen($value) > $limit) {
                 return new WP_Error('tool_input_length', "$path exceeds the maximum length.");
+            }
+        }
+
+        if ($type === 'integer' || $type === 'number') {
+            if (isset($schema['minimum']) && $value < $schema['minimum']) {
+                return new WP_Error('tool_input_minimum', "$path is below the minimum value.");
+            }
+            if (isset($schema['maximum']) && $value > $schema['maximum']) {
+                return new WP_Error('tool_input_maximum', "$path exceeds the maximum value.");
             }
         }
 
@@ -92,8 +105,9 @@ abstract class WAA_Tool_Base {
                     return new WP_Error('tool_input_required', "$path.$required is required.");
                 }
             }
+            $has_properties = array_key_exists('properties', $schema);
             $properties = is_array($schema['properties'] ?? null) ? $schema['properties'] : [];
-            if ($properties !== []) {
+            if ($has_properties) {
                 foreach ($value as $key => $item) {
                     if (!isset($properties[$key])) {
                         return new WP_Error('tool_input_unknown', "$path.$key is not allowed.");
