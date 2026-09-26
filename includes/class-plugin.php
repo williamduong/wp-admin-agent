@@ -133,7 +133,7 @@ class WAA_Plugin {
 
         do_action('waa_admin_agent_save_settings', $tab, $settings, map_deep($posted, 'sanitize_text_field'));
 
-        wp_redirect(add_query_arg('saved', '1', menu_page_url('wp-admin-agent', false)));
+        wp_safe_redirect(add_query_arg('saved', '1', menu_page_url('wp-admin-agent', false)));
         exit;
     }
 
