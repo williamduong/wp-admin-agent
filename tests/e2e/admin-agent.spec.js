@@ -2,6 +2,19 @@ import { test, expect } from '@playwright/test';
 
 test.describe.configure({ mode: 'serial' });
 
+test.beforeEach(async ({ page }) => {
+    await page.goto('/wp-admin/');
+
+    if (page.url().includes('wp-login.php')) {
+        await page.getByLabel('Username or Email Address').fill('admin');
+        await page.getByLabel('Password').fill('password');
+        await Promise.all([
+            page.waitForURL(/\/wp-admin\//),
+            page.getByRole('button', { name: 'Log In' }).click(),
+        ]);
+    }
+});
+
 async function openAssistant(page) {
     const toggle = page.getByRole('button', { name: 'Open AI assistant' });
     await expect(toggle).toBeVisible();
