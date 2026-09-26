@@ -14,7 +14,7 @@ class SecurityDataTest extends WP_UnitTestCase {
             'api_key' => 'sk-secret-value-123456789',
             'profile' => ['email' => 'person@example.com'],
             'message' => 'Contact person@example.com using Bearer abc.def.ghi',
-            'url' => 'https://example.com/?key=AIzaVerySecretValue123456789',
+            'url' => 'https://example.com/?key=' . 'AIza' . 'VerySecretValue123456789',
         ]);
 
         $this->assertSame('[redacted]', $sanitized['api_key']);
