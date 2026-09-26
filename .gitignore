@@ -5,6 +5,7 @@ vendor/
 # Build and packaging artifacts
 coverage/
 dist/
+build/
 
 # Test artifacts
 playwright-report/
