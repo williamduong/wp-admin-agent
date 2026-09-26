@@ -582,7 +582,8 @@ class WAA_REST_API {
 
         global $wpdb;
         $existing_payload = $wpdb->get_var($wpdb->prepare(
-            "SELECT messages FROM " . WAA_TABLE_CONVERSATIONS . " WHERE id = %d AND user_id = %d",
+            "SELECT messages FROM %i WHERE id = %d AND user_id = %d",
+            WAA_TABLE_CONVERSATIONS,
             $conversation_id,
             get_current_user_id()
         ));

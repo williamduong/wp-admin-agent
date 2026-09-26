@@ -22,15 +22,14 @@ class WAA_Audit_Log {
     public static function get_recent(int $limit = 10): array {
         global $wpdb;
         return $wpdb->get_results($wpdb->prepare(
-            "SELECT * FROM " . WAA_TABLE_LOGS . " ORDER BY created_at DESC LIMIT %d",
+            "SELECT * FROM %i ORDER BY created_at DESC LIMIT %d",
+            WAA_TABLE_LOGS,
             $limit
         ));
     }
 
     public static function get_stats(string $period = '30'): array {
         global $wpdb;
-        $table = WAA_TABLE_LOGS;
-
         $days = (int) $period;
 
         // Aggregate totals
@@ -40,8 +39,9 @@ class WAA_Audit_Log {
                 SUM(input_tokens)    AS total_input,
                 SUM(output_tokens)   AS total_output,
                 SUM(CASE WHEN status='error' THEN 1 ELSE 0 END) AS total_errors
-             FROM $table
+             FROM %i
              WHERE created_at >= DATE_SUB(NOW(), INTERVAL %d DAY)",
+            WAA_TABLE_LOGS,
             $days
         ), ARRAY_A);
 
@@ -52,36 +52,40 @@ class WAA_Audit_Log {
                 COUNT(*)          AS calls,
                 SUM(input_tokens) AS input_tokens,
                 SUM(output_tokens) AS output_tokens
-             FROM $table
+             FROM %i
              WHERE created_at >= DATE_SUB(NOW(), INTERVAL %d DAY)
                AND model != ''
              GROUP BY provider, model
              ORDER BY calls DESC",
+            WAA_TABLE_LOGS,
             $days
         ), ARRAY_A);
 
         // Per-day (last 7 days)
-        $daily = $wpdb->get_results(
+        $daily = $wpdb->get_results($wpdb->prepare(
             "SELECT
                 DATE(created_at) AS day,
                 COUNT(*)          AS calls,
                 SUM(input_tokens) AS input_tokens,
                 SUM(output_tokens) AS output_tokens
-             FROM $table
+             FROM %i
              WHERE created_at >= DATE_SUB(NOW(), INTERVAL 7 DAY)
              GROUP BY DATE(created_at)
              ORDER BY day ASC",
+            WAA_TABLE_LOGS
+        ),
             ARRAY_A
         );
 
         // Top tools
         $top_tools = $wpdb->get_results($wpdb->prepare(
             "SELECT tool_name, COUNT(*) AS calls
-             FROM $table
+             FROM %i
              WHERE created_at >= DATE_SUB(NOW(), INTERVAL %d DAY)
              GROUP BY tool_name
              ORDER BY calls DESC
              LIMIT 10",
+            WAA_TABLE_LOGS,
             $days
         ), ARRAY_A);
 

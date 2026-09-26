@@ -49,31 +49,16 @@ class WAA_Plugin {
             KEY idx_user_id (user_id)
         ) $charset;");
 
-        // Migrate existing tables — add new columns if missing
-        self::maybe_migrate_logs_table();
-
         update_option('waa_db_version', WAA_VERSION);
-    }
-
-    private static function maybe_migrate_logs_table(): void {
-        global $wpdb;
-        $table   = WAA_TABLE_LOGS;
-        $columns = $wpdb->get_col("DESCRIBE $table", 0);
-
-        $add = [];
-        if (!in_array('provider',      $columns, true)) $add[] = "ADD COLUMN provider      VARCHAR(50)  DEFAULT ''";
-        if (!in_array('model',         $columns, true)) $add[] = "ADD COLUMN model         VARCHAR(100) DEFAULT ''";
-        if (!in_array('input_tokens',  $columns, true)) $add[] = "ADD COLUMN input_tokens  INT UNSIGNED DEFAULT 0";
-        if (!in_array('output_tokens', $columns, true)) $add[] = "ADD COLUMN output_tokens INT UNSIGNED DEFAULT 0";
-
-        if ($add) {
-            $wpdb->query("ALTER TABLE $table " . implode(', ', $add));
-        }
     }
 
     public static function deactivate(): void {
         global $wpdb;
-        $wpdb->query("DELETE FROM {$wpdb->options} WHERE option_name LIKE 'waa_rate_%'");
+        $wpdb->query($wpdb->prepare(
+            'DELETE FROM %i WHERE option_name LIKE %s',
+            $wpdb->options,
+            $wpdb->esc_like('waa_rate_') . '%'
+        ));
     }
 
     private function register_admin_hooks(): void {

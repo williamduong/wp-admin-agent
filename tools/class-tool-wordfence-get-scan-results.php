@@ -79,7 +79,7 @@ class WAA_Tool_Wordfence_Get_Scan_Results extends WAA_Tool_Base {
                 'description' => $data['shortMsg'] ?? $data['longMsg'] ?? '',
                 'file'        => $data['file'] ?? '',
                 'url'         => $data['url'] ?? '',
-                'time'        => date('Y-m-d H:i:s', (int) ($row['time'] ?? 0)),
+                'time'        => gmdate('Y-m-d H:i:s', (int) ($row['time'] ?? 0)),
             ];
         }
 

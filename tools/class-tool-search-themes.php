@@ -59,7 +59,7 @@ class WAA_Tool_Search_Themes extends WAA_Tool_Base {
                 'name'             => $theme->name,
                 'author'           => $theme->author,
                 'version'          => $theme->version,
-                'description'      => wp_trim_words(strip_tags($theme->description ?? ''), 30),
+                'description'      => wp_trim_words(wp_strip_all_tags($theme->description ?? ''), 30),
                 'rating'           => round($theme->rating / 20, 1) . '/5',
                 'active_installs'  => $theme->active_installs ?? 0,
                 'preview_url'      => $theme->preview_url ?? '',
