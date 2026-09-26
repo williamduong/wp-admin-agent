@@ -16,11 +16,11 @@ class WAA_Provider_Fake extends WAA_Provider_Base {
     }
 
     public function get_model_instructions(): string {
-        return <<<INST
-You are running against a deterministic fake provider fixture.
-- Use the fixture responses exactly as defined.
-- Do not improvise or call external services.
-INST;
+        return implode("\n", [
+            'You are running against a deterministic fake provider fixture.',
+            '- Use the fixture responses exactly as defined.',
+            '- Do not improvise or call external services.',
+        ]);
     }
 
     public function complete(string $system, array $messages, array $tools): array {
@@ -37,7 +37,7 @@ INST;
             return $this->normalize_response($fixture['default']);
         }
 
-        throw new RuntimeException("Fake provider fixture '{$this->fixture}' did not match the current prompt.");
+        throw new RuntimeException('Fake provider fixture ' . esc_html($this->fixture) . ' did not match the current prompt.');
     }
 
     private function load_fixture(): array {
@@ -49,12 +49,12 @@ INST;
         );
 
         if (!file_exists($path)) {
-            throw new RuntimeException("Fake provider fixture '{$slug}' not found.");
+            throw new RuntimeException('Fake provider fixture ' . esc_html($slug) . ' not found.');
         }
 
         $data = json_decode((string) file_get_contents($path), true);
         if (!is_array($data)) {
-            throw new RuntimeException("Fake provider fixture '{$slug}' is invalid JSON.");
+            throw new RuntimeException('Fake provider fixture ' . esc_html($slug) . ' is invalid JSON.');
         }
 
         return $data;

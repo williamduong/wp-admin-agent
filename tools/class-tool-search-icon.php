@@ -53,14 +53,14 @@ class WAA_Tool_Search_Icon extends WAA_Tool_Base {
         );
 
         if (is_wp_error($response)) {
-            throw new RuntimeException('Icon search failed: ' . $response->get_error_message());
+            throw new RuntimeException('Icon search failed: ' . esc_html($response->get_error_message()));
         }
 
         $code = wp_remote_retrieve_response_code($response);
         $body = json_decode(wp_remote_retrieve_body($response), true);
 
         if ($code !== 200 || !isset($body['icons'])) {
-            throw new RuntimeException("Iconify returned HTTP $code");
+            throw new RuntimeException('Iconify returned HTTP ' . (int) $code);
         }
 
         $results = [];

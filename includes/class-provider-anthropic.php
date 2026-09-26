@@ -15,12 +15,12 @@ class WAA_Provider_Anthropic extends WAA_Provider_Base {
     public function get_label(): string { return 'Anthropic (Claude)'; }
 
     public function get_model_instructions(): string {
-        return <<<INST
-You are running on Anthropic Claude. You excel at structured tool use and step-by-step reasoning.
-- Always read current state before modifying (call a get_ tool first).
-- Chain tool calls within one turn when steps are independent.
-- Prefer concise confirmations after each successful write.
-INST;
+        return implode("\n", [
+            'You are running on Anthropic Claude. You excel at structured tool use and step-by-step reasoning.',
+            '- Always read current state before modifying (call a get_ tool first).',
+            '- Chain tool calls within one turn when steps are independent.',
+            '- Prefer concise confirmations after each successful write.',
+        ]);
     }
 
     public function complete(string $system, array $messages, array $tools): array {
@@ -44,15 +44,17 @@ INST;
         ]);
 
         if (is_wp_error($response)) {
-            throw new RuntimeException($response->get_error_message());
+            throw new RuntimeException(esc_html($response->get_error_message()));
         }
 
         $code = wp_remote_retrieve_response_code($response);
         $body = json_decode(wp_remote_retrieve_body($response), true);
 
         if ($code !== 200) {
-            $msg = $body['error']['message'] ?? "HTTP $code";
-            throw new RuntimeException("Anthropic error: $msg");
+            $msg = isset($body['error']['message'])
+                ? sanitize_text_field((string) $body['error']['message'])
+                : 'HTTP ' . (int) $code;
+            throw new RuntimeException('Anthropic error: ' . esc_html($msg));
         }
 
         return $this->normalize($body);

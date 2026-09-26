@@ -107,12 +107,14 @@ class WAA_Resource_Fetcher {
     private function validate_headers(object $headers): void {
         $content_length = (int) ($headers['content-length'] ?? 0);
         if ($content_length > self::MAX_BYTES) {
-            throw new RuntimeException("File too large ({$content_length} bytes). Limit: " . self::MAX_BYTES . " bytes.");
+            throw new RuntimeException(
+                esc_html(sprintf('File too large (%d bytes). Limit: %d bytes.', $content_length, self::MAX_BYTES))
+            );
         }
 
         $content_type = strtok($headers['content-type'] ?? '', ';');
         if ($content_type && !in_array($content_type, self::ALLOWED_MIME, true)) {
-            throw new RuntimeException("Content-Type '$content_type' not allowed.");
+            throw new RuntimeException('Content-Type ' . esc_html((string) $content_type) . ' not allowed.');
         }
     }
 
