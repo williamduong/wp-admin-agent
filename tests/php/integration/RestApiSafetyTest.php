@@ -545,13 +545,23 @@ class RestApiSafetyTest extends WP_UnitTestCase {
         $tool_names = array_column($registry->get_schemas(), 'name');
 
         $this->assertContains('get_woocommerce_status', $tool_names);
-        $this->assertContains('update_woocommerce_settings', $tool_names);
         $this->assertContains('list_woocommerce_products', $tool_names);
-        $this->assertContains('create_woocommerce_product', $tool_names);
-        $this->assertContains('update_woocommerce_product', $tool_names);
         $this->assertContains('list_woocommerce_orders', $tool_names);
-        $this->assertContains('update_woocommerce_order_status', $tool_names);
-        $this->assertContains('create_woocommerce_coupon', $tool_names);
+
+        $write_tools = [
+            'update_woocommerce_settings',
+            'create_woocommerce_product',
+            'update_woocommerce_product',
+            'update_woocommerce_order_status',
+            'create_woocommerce_coupon',
+        ];
+        foreach ($write_tools as $write_tool) {
+            if (defined('WAA_PRO_VERSION')) {
+                $this->assertContains($write_tool, $tool_names);
+            } else {
+                $this->assertNotContains($write_tool, $tool_names);
+            }
+        }
     }
 
     public function test_agent_requires_confirmation_for_woocommerce_write_tools(): void {
