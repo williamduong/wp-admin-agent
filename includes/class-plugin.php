@@ -10,7 +10,6 @@ class WAA_Plugin {
     }
 
     public function init(): void {
-        load_plugin_textdomain('wp-admin-agent', false, dirname(plugin_basename(WAA_PLUGIN_DIR . 'wp-admin-agent.php')) . '/languages');
         new WAA_REST_API();
         $this->register_admin_hooks();
     }
@@ -53,12 +52,7 @@ class WAA_Plugin {
     }
 
     public static function deactivate(): void {
-        global $wpdb;
-        $wpdb->query($wpdb->prepare(
-            'DELETE FROM %i WHERE option_name LIKE %s',
-            $wpdb->options,
-            $wpdb->esc_like('waa_rate_') . '%'
-        ));
+        // Per-user rate-limit transients expire automatically after one minute.
     }
 
     private function register_admin_hooks(): void {
@@ -71,65 +65,73 @@ class WAA_Plugin {
     }
 
     public function maybe_handle_settings_save(): void {
-        if (!is_admin() || $_SERVER['REQUEST_METHOD'] !== 'POST') {
+        $request_method = isset($_SERVER['REQUEST_METHOD'])
+            ? sanitize_text_field(wp_unslash($_SERVER['REQUEST_METHOD']))
+            : '';
+        if (!is_admin() || $request_method !== 'POST') {
             return;
         }
 
-        $page = $_POST['page'] ?? $_GET['page'] ?? '';
-        if (!isset($_POST['_wpnonce']) || $page !== 'wp-admin-agent') {
+        $posted = wp_unslash($_POST);
+        $page = isset($posted['page'])
+            ? sanitize_key($posted['page'])
+            : (isset($_GET['page']) ? sanitize_key(wp_unslash($_GET['page'])) : '');
+        $nonce = isset($posted['_wpnonce']) ? sanitize_text_field($posted['_wpnonce']) : '';
+        if ($nonce === '' || $page !== 'wp-admin-agent') {
             return;
         }
 
-        if (!current_user_can('manage_options') || !wp_verify_nonce($_POST['_wpnonce'], 'waa_settings')) {
+        if (!current_user_can('manage_options') || !wp_verify_nonce($nonce, 'waa_settings')) {
             return;
         }
 
         $settings = new WAA_Settings();
 
-        if (!empty($_POST['waa_provider'])) {
-            $settings->set_provider(sanitize_text_field($_POST['waa_provider']));
+        if (!empty($posted['waa_provider'])) {
+            $settings->set_provider(sanitize_text_field($posted['waa_provider']));
         }
 
-        if (!empty($_POST['waa_model'])) {
-            $settings->set_model(sanitize_text_field($_POST['waa_model']));
+        if (!empty($posted['waa_model'])) {
+            $settings->set_model(sanitize_text_field($posted['waa_model']));
         }
 
-        if (!empty($_POST['waa_api_key']) && $_POST['waa_api_key'] !== '••••••••') {
-            $settings->set_api_key(sanitize_text_field($_POST['waa_api_key']));
+        if (!empty($posted['waa_api_key']) && $posted['waa_api_key'] !== '••••••••') {
+            $settings->set_api_key(sanitize_text_field($posted['waa_api_key']));
         }
 
-        if (!empty($_POST['waa_gemini_key']) && $_POST['waa_gemini_key'] !== '••••••••') {
-            $settings->set_gemini_api_key(sanitize_text_field($_POST['waa_gemini_key']));
+        if (!empty($posted['waa_gemini_key']) && $posted['waa_gemini_key'] !== '••••••••') {
+            $settings->set_gemini_api_key(sanitize_text_field($posted['waa_gemini_key']));
         }
 
-        if (!empty($_POST['waa_ollama_url'])) {
-            $settings->set_ollama_url(sanitize_text_field($_POST['waa_ollama_url']));
+        if (!empty($posted['waa_ollama_url'])) {
+            $settings->set_ollama_url(esc_url_raw($posted['waa_ollama_url']));
         }
 
-        if (isset($_POST['waa_debug_mode'])) {
-            $settings->set_debug_mode(sanitize_key($_POST['waa_debug_mode']));
+        if (isset($posted['waa_debug_mode'])) {
+            $settings->set_debug_mode(sanitize_key($posted['waa_debug_mode']));
         }
 
-        if (($_POST['tab'] ?? '') === 'provider') {
-            $settings->set_delete_data_on_uninstall(isset($_POST['waa_delete_data_on_uninstall']));
+        $tab = isset($posted['tab']) ? sanitize_key($posted['tab']) : '';
+        if ($tab === 'provider') {
+            $settings->set_delete_data_on_uninstall(isset($posted['waa_delete_data_on_uninstall']));
         }
 
         // Custom rules (textarea — may be empty, that's valid)
-        if (isset($_POST['waa_custom_rules'])) {
-            $settings->set_custom_rules(wp_unslash($_POST['waa_custom_rules']));
+        if (isset($posted['waa_custom_rules'])) {
+            $settings->set_custom_rules(sanitize_textarea_field($posted['waa_custom_rules']));
         }
 
         // Disabled tools are updated only when the Tools tab is submitted.
         // Otherwise, preserve the existing tool enable/disable state.
-        if (!empty($_POST['tab']) && $_POST['tab'] === 'tools') {
-            $submitted_enabled = array_keys(array_filter($_POST, fn($k) => str_starts_with($k, 'waa_tool_'), ARRAY_FILTER_USE_KEY));
+        if ($tab === 'tools') {
+            $submitted_enabled = array_keys(array_filter($posted, fn($k) => str_starts_with(sanitize_key($k), 'waa_tool_'), ARRAY_FILTER_USE_KEY));
             $enabled_names     = array_map(fn($k) => substr($k, strlen('waa_tool_')), $submitted_enabled);
             $all_tools         = array_column(WAA_REST_API::build_registry()->get_schemas(), 'name');
             $disabled          = array_values(array_diff($all_tools, $enabled_names));
             $settings->set_disabled_tools($disabled);
         }
 
-        do_action('waa_admin_agent_save_settings', sanitize_key($_POST['tab'] ?? ''), $settings, $_POST);
+        do_action('waa_admin_agent_save_settings', $tab, $settings, map_deep($posted, 'sanitize_text_field'));
 
         wp_redirect(add_query_arg('saved', '1', menu_page_url('wp-admin-agent', false)));
         exit;
