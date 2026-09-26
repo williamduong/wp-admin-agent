@@ -185,7 +185,7 @@ class WAA_Plugin {
 
     public function add_settings_page(): void {
         add_options_page(
-            'WP Admin Agent',
+            'William Research Admin Agent',
             'Admin Agent',
             'manage_options',
             'wp-admin-agent',
@@ -213,16 +213,16 @@ class WAA_Plugin {
         }
 
         $content = '<p>' . esc_html__(
-            'WP Admin Agent stores administrator conversations and tool execution logs in the WordPress database. When an administrator configures and uses an AI provider, prompts, conversation context, selected site information, and tool schemas may be sent to that provider. The plugin can connect to Anthropic, Google Gemini, or an administrator-configured Ollama server. Optional extensions may connect to additional services that must be disclosed separately.',
-            'wp-admin-agent'
+            'William Research Admin Agent stores administrator conversations and tool execution logs in the WordPress database. When an administrator configures and uses an AI provider, prompts, conversation context, selected site information, and tool schemas may be sent to that provider. The plugin can connect to Anthropic, Google Gemini, or an administrator-configured Ollama server. Optional extensions may connect to additional services that must be disclosed separately.',
+            'william-research-admin-agent'
         ) . '</p>';
         $content .= '<p>' . esc_html__(
             'Provider credentials are encrypted before storage using WordPress security keys. Site owners should document their selected provider, configure an appropriate retention period, and avoid sending unnecessary personal or confidential information.',
-            'wp-admin-agent'
+            'william-research-admin-agent'
         ) . '</p>';
 
         wp_add_privacy_policy_content(
-            esc_html__('WP Admin Agent', 'wp-admin-agent'),
+            esc_html__('William Research Admin Agent', 'william-research-admin-agent'),
             wp_kses_post(wpautop($content))
         );
     }

@@ -1,6 +1,6 @@
-# WP Admin Agent
+# William Research Admin Agent
 
-WP Admin Agent is a privacy-conscious AI assistant inside WordPress Admin. It connects to an administrator-selected Anthropic, Google Gemini, or Ollama model and exposes a controlled set of WordPress tools for inspection, navigation, and safe draft workflows.
+William Research Admin Agent is a privacy-conscious AI assistant inside WordPress Admin. It connects to an administrator-selected Anthropic, Google Gemini, or Ollama model and exposes a controlled set of WordPress tools for inspection, navigation, and safe draft workflows.
 
 This repository contains the GPL-licensed Free edition. A separate Pro add-on provides higher-risk operational tools, advanced WooCommerce workflows, policy controls, and commercial support.
 
@@ -38,15 +38,15 @@ Try the public, fake-data showcase at [wp-admin-agent-showcase-cd6tjmxetq-as.a.r
 
 ```bash
 cd /path/to/wordpress/wp-content/plugins
-git clone https://github.com/williamduong/wp-admin-agent.git
-wp plugin activate wp-admin-agent
+git clone https://github.com/williamduong/wp-admin-agent.git william-research-admin-agent
+wp plugin activate william-research-admin-agent
 ```
 
 Compiled frontend assets are included in tagged releases. Pin a reviewed release instead of tracking `main` on production sites.
 
 ## Configure
 
-1. Open **Settings → WP Admin Agent**.
+1. Open **Settings → William Research Admin Agent**.
 2. Select Anthropic, Gemini, or Ollama.
 3. Enter the provider configuration and test the connection.
 4. Review enabled tools and disable anything the site does not need.
@@ -96,4 +96,4 @@ Do not submit secrets, regulated data, or unnecessary personal data in prompts. 
 
 ## License
 
-WP Admin Agent Free is licensed under `GPL-2.0-or-later`. See [LICENSE](LICENSE).
+William Research Admin Agent Free is licensed under `GPL-2.0-or-later`. See [LICENSE](LICENSE).

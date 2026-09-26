@@ -1,10 +1,10 @@
-=== WP Admin Agent ===
+=== William Research Admin Agent ===
 Contributors: williamduong
 Tags: ai assistant, admin, automation, woocommerce, ollama
 Requires at least: 6.5
 Tested up to: 7.1
 Requires PHP: 8.2
-Stable tag: 0.3.0
+Stable tag: 0.3.1
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -12,7 +12,7 @@ A privacy-conscious AI assistant for safe WordPress administration, site inspect
 
 == Description ==
 
-WP Admin Agent adds a conversational assistant to WordPress Admin. Administrators connect their own Anthropic, Google Gemini, or Ollama provider and choose which WordPress tools the assistant may use.
+William Research Admin Agent adds a conversational AI assistant to WordPress Admin. Administrators connect their own Anthropic, Google Gemini, or Ollama provider and choose which WordPress tools the assistant may use.
 
 The Free edition focuses on safe workflows:
 
@@ -66,9 +66,9 @@ RSS publishers
 
 = Installation =
 
-1. Upload the `wp-admin-agent` directory to `/wp-content/plugins/`, or install an official release.
-2. Activate **WP Admin Agent** through the Plugins screen.
-3. Open **Settings → WP Admin Agent**.
+1. Upload the `william-research-admin-agent` directory to `/wp-content/plugins/`, or install an official release.
+2. Activate **William Research Admin Agent** through the Plugins screen.
+3. Open **Settings → William Research Admin Agent**.
 4. Select and configure Anthropic, Gemini, or Ollama.
 5. Test the provider connection.
 6. Review enabled tools before using the assistant.
@@ -104,6 +104,12 @@ The Free edition does not send product telemetry by default. Calls required to f
 5. Built-in documentation.
 
 == Changelog ==
+
+= 0.3.1 =
+
+* Adopted the William Research product identity and WordPress.org-ready package slug.
+* Resolved Plugin Check findings for escaping, database preparation, file handling, and request sanitization.
+* Added the official WordPress Plugin Check action to continuous integration.
 
 = 0.3.0 =
 

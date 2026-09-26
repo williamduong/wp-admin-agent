@@ -14,8 +14,8 @@ $version = $versionMatch.Matches[0].Groups[1].Value.Trim()
 
 $outputRoot = [System.IO.Path]::GetFullPath($OutputDirectory)
 New-Item -ItemType Directory -Path $outputRoot -Force | Out-Null
-$stagingRoot = Join-Path $outputRoot '.staging-wp-admin-agent'
-$packageRoot = Join-Path $stagingRoot 'wp-admin-agent'
+$stagingRoot = Join-Path $outputRoot '.staging-william-research-admin-agent'
+$packageRoot = Join-Path $stagingRoot 'william-research-admin-agent'
 
 if (Test-Path -LiteralPath $stagingRoot) {
     $resolved = (Resolve-Path -LiteralPath $stagingRoot).Path
@@ -36,7 +36,7 @@ foreach ($file in @('LICENSE', 'readme.txt', 'uninstall.php', 'wp-admin-agent.ph
     Copy-Item -LiteralPath (Join-Path $sourceRoot $file) -Destination (Join-Path $packageRoot $file)
 }
 
-$zipPath = Join-Path $outputRoot "wp-admin-agent-$version.zip"
+$zipPath = Join-Path $outputRoot "william-research-admin-agent-$version.zip"
 if (Test-Path -LiteralPath $zipPath) {
     Remove-Item -LiteralPath $zipPath -Force
 }

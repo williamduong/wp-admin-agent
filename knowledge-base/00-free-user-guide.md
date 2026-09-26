@@ -1,8 +1,8 @@
-# WP Admin Agent Free — Quick Guide
+# William Research Admin Agent Free — Quick Guide
 
 ## What the Free edition does
 
-WP Admin Agent Free connects an administrator-selected Anthropic, Google Gemini, or Ollama model to a controlled set of WordPress tools. It can inspect site state, navigate WordPress Admin, retrieve selected feeds, and create post drafts for review.
+William Research Admin Agent Free connects an administrator-selected Anthropic, Google Gemini, or Ollama model to a controlled set of WordPress tools. It can inspect site state, navigate WordPress Admin, retrieve selected feeds, and create post drafts for review.
 
 ## Safe first requests
 
@@ -14,7 +14,7 @@ WP Admin Agent Free connects an administrator-selected Anthropic, Google Gemini,
 
 ## Provider setup
 
-Open **Settings → WP Admin Agent**, select a provider, enter the provider configuration, and use **Test Connection**. Credentials are encrypted before storage using WordPress security keys.
+Open **Settings → William Research Admin Agent**, select a provider, enter the provider configuration, and use **Test Connection**. Credentials are encrypted before storage using WordPress security keys.
 
 ## Tool controls
 
@@ -30,4 +30,4 @@ Conversations and audit metadata are stored in the WordPress database. Data is p
 
 ## Pro add-on
 
-WP Admin Agent Pro is a separate plugin. It can add higher-risk operational tools, WooCommerce mutations, media workflows, Mermaid rendering, advanced policies, and commercial update/support services. Free continues to work when Pro is not installed.
+William Research Admin Agent Pro is a separate plugin. It can add higher-risk operational tools, WooCommerce mutations, media workflows, Mermaid rendering, advanced policies, and commercial update/support services. Free continues to work when Pro is not installed.

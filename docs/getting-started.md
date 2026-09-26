@@ -22,7 +22,7 @@ git clone https://github.com/williamduong/wp-admin-asistant.git wp-admin-assista
 wp plugin activate wp-admin-assistant
 ```
 
-If WP-CLI is unavailable, clone or copy the directory to `wp-content/plugins/wp-admin-assistant`, then activate **WP Admin Agent** from **Plugins → Installed Plugins**.
+If WP-CLI is unavailable, clone or copy the directory to `wp-content/plugins/william-research-admin-agent`, then activate **William Research Admin Agent** from **Plugins → Installed Plugins**.
 
 ### Build the frontend from source
 
@@ -35,7 +35,7 @@ npm run build
 
 ## 3. Configure an AI provider
 
-Open **Settings → WP Admin Agent**.
+Open **Settings → William Research Admin Agent**.
 
 ![Provider settings](images/03-provider-settings.png)
 

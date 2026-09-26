@@ -8,8 +8,8 @@ Avoid including live credentials, customer data, or exploit details beyond what 
 
 ## Supported versions
 
-Security fixes are provided for the latest tagged Free release. Commercial support terms for WP Admin Agent Pro are provided with the purchase agreement.
+Security fixes are provided for the latest tagged Free release. Commercial support terms for William Research Admin Agent Pro are provided with the purchase agreement.
 
 ## Security model
 
-WP Admin Agent is an administrator-only integration. REST and MCP operations require WordPress authentication and the `manage_options` capability. Site owners remain responsible for administrator-account security, provider credentials, tool configuration, backups, and review of high-impact operations.
+William Research Admin Agent is an administrator-only integration. REST and MCP operations require WordPress authentication and the `manage_options` capability. Site owners remain responsible for administrator-account security, provider credentials, tool configuration, backups, and review of high-impact operations.

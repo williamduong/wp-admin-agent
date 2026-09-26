@@ -1,21 +1,21 @@
 <?php
 /**
- * Plugin Name:       WP Admin Agent
+ * Plugin Name:       William Research Admin Agent
  * Plugin URI:        https://github.com/williamduong/wp-admin-agent
  * Description:       A privacy-conscious AI assistant for safe WordPress administration and draft workflows.
- * Version:           0.3.0
+ * Version:           0.3.1
  * Requires at least: 6.5
  * Requires PHP:      8.2
- * Author:            GoRight AI
- * Author URI:        https://goright.ai
+ * Author:            William Duong
+ * Author URI:        https://williamresearch.com/about/
  * License:           GPL-2.0-or-later
  * License URI:       https://www.gnu.org/licenses/gpl-2.0.html
- * Text Domain:       wp-admin-agent
+ * Text Domain:       william-research-admin-agent
  */
 
 defined('ABSPATH') || exit;
 
-define('WAA_VERSION',             '0.3.0');
+define('WAA_VERSION',             '0.3.1');
 define('WAA_PLUGIN_DIR',          plugin_dir_path(__FILE__));
 define('WAA_PLUGIN_URL',          plugin_dir_url(__FILE__));
 define('WAA_TABLE_LOGS',          $GLOBALS['wpdb']->prefix . 'waa_logs');

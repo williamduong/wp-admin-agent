@@ -37,12 +37,12 @@ jobs:
         shell: bash
         run: |
           mkdir -p build
-          unzip -q "$(find dist -maxdepth 1 -name 'wp-admin-agent-*.zip' -print -quit)" -d build
+          unzip -q "$(find dist -maxdepth 1 -name 'william-research-admin-agent-*.zip' -print -quit)" -d build
       - name: Run WordPress Plugin Check
         uses: wordpress/plugin-check-action@v1
         with:
-          build-dir: './build/wp-admin-agent'
+          build-dir: './build/william-research-admin-agent'
       - uses: actions/upload-artifact@v4
         with:
-          name: wp-admin-agent
+          name: william-research-admin-agent
           path: dist/*.zip

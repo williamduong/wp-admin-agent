@@ -47,7 +47,7 @@ $navigate_map = [
 ];
 ?>
 <div class="wrap">
-    <h1>WP Admin Agent — Settings</h1>
+    <h1>William Research Admin Agent — Settings</h1>
 
     <?php // phpcs:ignore WordPress.Security.NonceVerification.Recommended -- Read-only success notice after a nonce-protected save. ?>
     <?php if (isset($_GET['saved'])): ?>
@@ -161,15 +161,15 @@ $navigate_map = [
                         </td>
                     </tr>
                     <tr>
-                        <th><?php esc_html_e('Data retention', 'wp-admin-agent'); ?></th>
+                        <th><?php esc_html_e('Data retention', 'william-research-admin-agent'); ?></th>
                         <td>
                             <label>
                                 <input type="checkbox" name="waa_delete_data_on_uninstall" value="1"
                                     <?php checked($settings->should_delete_data_on_uninstall()); ?>>
-                                <?php esc_html_e('Delete settings, encrypted credentials, conversations, and audit logs when the plugin is uninstalled.', 'wp-admin-agent'); ?>
+                                <?php esc_html_e('Delete settings, encrypted credentials, conversations, and audit logs when the plugin is uninstalled.', 'william-research-admin-agent'); ?>
                             </label>
                             <p class="description">
-                                <?php esc_html_e('Disabled by default so operational history is not removed unexpectedly.', 'wp-admin-agent'); ?>
+                                <?php esc_html_e('Disabled by default so operational history is not removed unexpectedly.', 'william-research-admin-agent'); ?>
                             </p>
                         </td>
                     </tr>
