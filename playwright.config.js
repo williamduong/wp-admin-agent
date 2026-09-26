@@ -21,11 +21,12 @@ export default defineConfig({
         command: [
             'npx --yes @wp-playground/cli@3.1.55 server',
             '--port=9400',
+            '--workers=3',
             '--mount=.:/wordpress/wp-content/plugins/william-research-admin-agent',
             '--blueprint=tests/e2e/blueprint.json',
         ].join(' '),
         url: 'http://127.0.0.1:9400/wp-admin/',
-        timeout: 180_000,
+        timeout: 300_000,
         reuseExistingServer: !process.env.CI,
     },
 });
