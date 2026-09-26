@@ -59,29 +59,31 @@ export default function ChatWidget({ isOpen, onToggle }) {
                 className={styles.toggleBtn}
                 onClick={onToggle}
                 aria-label={isOpen ? 'Close AI assistant' : 'Open AI assistant'}
-                title="AI Assistant"
+                title="William Research Admin Agent"
             >
                 {isOpen ? '✕' : '🤖'}
             </button>
 
             {/* Chat panel */}
             {isOpen && (
-                <div className={styles.panel} ref={panelRef} role="dialog" aria-label="AI Assistant">
+                <div className={styles.panel} ref={panelRef} role="dialog" aria-label="William Research Admin Agent">
                     <div className={styles.header}>
                         <div className={styles.headerIdentity}>
-                            <span className={styles.headerTitle}>🤖 Admin Assistant</span>
+                            <span className={styles.headerTitle}>🤖 William Research Admin Agent</span>
                             <span className={styles.headerMeta}>
                                 {conversationId ? `Session #${conversationId}` : 'Session chưa được tạo'}
                             </span>
                         </div>
                         <div className={styles.headerActions}>
-                            <button
-                                className={styles.iconBtn}
-                                onClick={() => startWorkflow('woocommerce_first_time_setup')}
-                                title="Start WooCommerce setup wizard"
-                            >
-                                🧭
-                            </button>
+                            {window.waaData?.isPro && (
+                                <button
+                                    className={styles.iconBtn}
+                                    onClick={() => startWorkflow('woocommerce_first_time_setup')}
+                                    title="Start WooCommerce setup wizard"
+                                >
+                                    🧭
+                                </button>
+                            )}
                             <button
                                 className={styles.iconBtn}
                                 onClick={() => setView(v => v === 'conversations' ? 'chat' : 'conversations')}
@@ -147,7 +149,7 @@ export default function ChatWidget({ isOpen, onToggle }) {
                             />
 
                     <div className={styles.copyright}>
-                        By <a href="https://williamresearch.com/" target="_blank" rel="noopener noreferrer">William GoRight</a>
+                        By <a href="https://williamresearch.com/about/" target="_blank" rel="noopener noreferrer">William Duong</a>
                     </div>
                         </>
                     )}

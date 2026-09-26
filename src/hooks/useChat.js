@@ -13,6 +13,7 @@ import {
 } from '../lib/workflows';
 
 const STORAGE_KEY = 'waa_chat_v1';
+const PRO_FEATURES_ENABLED = Boolean(globalThis.waaData?.isPro);
 const EMPTY_TRACE = {
     event_count: 0,
     first_event_ms: 0,
@@ -95,9 +96,8 @@ function normalizePendingConfirmation(event) {
 
     return {
         approved: true,
+        action_id: event.action_id,
         tool_name: event.tool_name,
-        tool_use_id: event.tool_use_id,
-        tool_input: event.tool_input ?? {},
         message: details.summary ?? event.message ?? '',
         title: details.title ?? 'Approve change',
         summary: details.summary ?? event.message ?? '',
@@ -220,7 +220,9 @@ export function useChat() {
     const [conversationId, setConversationId] = useState(() => stored().conversationId ?? null);
     const [pendingNavUrl,  setPendingNavUrl]  = useState(null);
     const [pendingConfirmation, setPendingConfirmation] = useState(() => stored().pendingConfirmation ?? null);
-    const [activeWorkflow, setActiveWorkflow] = useState(() => stored().activeWorkflow ?? stored().activeWizard ?? null);
+    const [activeWorkflow, setActiveWorkflow] = useState(() => (
+        PRO_FEATURES_ENABLED ? (stored().activeWorkflow ?? stored().activeWizard ?? null) : null
+    ));
     const abortRef = useRef(null);
     const skipNextPersistRef = useRef(false);
     const lastWorkflowSyncRef = useRef({ conversationId: null, serialized: null });
@@ -270,7 +272,7 @@ export function useChat() {
 
     const sendMessage = useCallback(async (text, options = {}) => {
         const bypassWorkflowCommands = Boolean(options.bypassWorkflowCommands);
-        const launchWorkflowId = !bypassWorkflowCommands ? matchWorkflowLaunchCommand(text) : null;
+        const launchWorkflowId = PRO_FEATURES_ENABLED && !bypassWorkflowCommands ? matchWorkflowLaunchCommand(text) : null;
         if (launchWorkflowId) {
             setPendingConfirmation(null);
             setPendingNavUrl(null);
@@ -465,7 +467,7 @@ export function useChat() {
                                 title: confirmation.title,
                                 summary: confirmation.summary,
                                 impact: confirmation.impact,
-                                toolName: event.tool_name,
+                                toolName: confirmation.tool_name ?? 'protected action',
                                 riskLevel: confirmation.riskLevel,
                                 status: 'pending',
                             };
@@ -709,7 +711,12 @@ export function useChat() {
             return;
         }
 
-        await sendMessage('Yes, proceed.', { confirmation: pendingConfirmation });
+        await sendMessage('Yes, proceed.', {
+            confirmation: {
+                approved: true,
+                action_id: pendingConfirmation.action_id,
+            },
+        });
     }, [isLoading, pendingConfirmation, sendMessage]);
 
     const cancelPendingAction = useCallback(async () => {
@@ -751,6 +758,7 @@ export function useChat() {
     }, [activeWorkflow, apiHistory, conversationId, isLoading, messages, pendingConfirmation, sessionUsage]);
 
     const startWorkflow = useCallback((workflowId) => {
+        if (!PRO_FEATURES_ENABLED) return;
         setPendingConfirmation(null);
         setActiveWorkflow(createWorkflowState(workflowId));
     }, []);

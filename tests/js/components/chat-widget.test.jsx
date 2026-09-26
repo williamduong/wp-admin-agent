@@ -83,7 +83,7 @@ describe('ChatWidget', () => {
     it('shows the session id in the chat header when a conversation exists', () => {
         render(<ChatWidget isOpen={true} onToggle={vi.fn()} />);
 
-        expect(screen.getByText('🤖 Admin Assistant')).toBeInTheDocument();
+        expect(screen.getByText('🤖 William Research Admin Agent')).toBeInTheDocument();
         expect(screen.getByText('Session #321')).toBeInTheDocument();
     });
 

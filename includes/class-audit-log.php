@@ -8,8 +8,8 @@ class WAA_Audit_Log {
         $wpdb->insert(WAA_TABLE_LOGS, [
             'user_id'       => get_current_user_id(),
             'tool_name'     => $tool,
-            'params'        => wp_json_encode($params),
-            'result'        => wp_json_encode($result),
+            'params'        => wp_json_encode(WAA_Data_Sanitizer::sanitize($params)),
+            'result'        => wp_json_encode(WAA_Data_Sanitizer::sanitize($result)),
             'status'        => isset($result['error']) ? 'error' : 'success',
             'provider'      => $meta['provider']      ?? '',
             'model'         => $meta['model']         ?? '',
@@ -17,6 +17,35 @@ class WAA_Audit_Log {
             'output_tokens' => $meta['output_tokens'] ?? 0,
             'created_at'    => current_time('mysql'),
         ], ['%d', '%s', '%s', '%s', '%s', '%s', '%s', '%d', '%d', '%s']);
+    }
+
+    public static function cleanup_expired(): void {
+        global $wpdb;
+        $days = (new WAA_Settings())->get_data_retention_days();
+        $cutoff = wp_date('Y-m-d H:i:s', time() - ($days * DAY_IN_SECONDS), wp_timezone());
+        $wpdb->query($wpdb->prepare(
+            'DELETE FROM %i WHERE created_at < %s',
+            WAA_TABLE_LOGS,
+            $cutoff
+        ));
+        $wpdb->query($wpdb->prepare(
+            'DELETE FROM %i WHERE updated_at < %s',
+            WAA_TABLE_CONVERSATIONS,
+            $cutoff
+        ));
+
+        $like = $wpdb->esc_like('waa_pending_action_') . '%';
+        $pending = $wpdb->get_results($wpdb->prepare(
+            "SELECT option_name, option_value FROM %i WHERE option_name LIKE %s",
+            $wpdb->options,
+            $like
+        ), ARRAY_A);
+        foreach ($pending as $row) {
+            $payload = maybe_unserialize($row['option_value']);
+            if (!is_array($payload) || (int) ($payload['expires_at'] ?? 0) < time()) {
+                delete_option($row['option_name']);
+            }
+        }
     }
 
     public static function get_recent(int $limit = 10): array {

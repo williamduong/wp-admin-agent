@@ -21,9 +21,24 @@ class WAA_MCP_Server {
     private const PROTOCOL_VERSION = '2024-11-05';
     private const SERVER_NAME      = 'wp-admin-agent';
     private const SERVER_VERSION   = '1.0.0';
+    private const READ_ONLY_TOOLS = [
+        'get_site_settings',
+        'list_plugins',
+        'list_themes',
+        'search_themes',
+        'list_users',
+        'list_posts',
+        'search_icon',
+        'get_woocommerce_status',
+        'list_woocommerce_products',
+        'list_woocommerce_orders',
+        'wordfence_get_settings',
+        'wordfence_get_scan_results',
+    ];
 
     public function __construct(
-        private readonly WAA_Tool_Registry $registry
+        private readonly WAA_Tool_Registry $registry,
+        private readonly ?WAA_Audit_Log $audit_log = null
     ) {}
 
     public function handle(WP_REST_Request $request): WP_REST_Response {
@@ -57,13 +72,16 @@ class WAA_MCP_Server {
             'capabilities' => [
                 'tools' => ['listChanged' => false],
             ],
-            'instructions' => 'WordPress Admin Agent — manage plugins, themes, posts, users, and settings via natural language.',
+            'instructions' => 'William Research Admin Agent exposes a read-only, capability-checked tool surface over MCP.',
         ]);
     }
 
     private function handle_tools_list(mixed $id): WP_REST_Response {
         $tools = [];
         foreach ($this->registry->get_schemas() as $schema) {
+            if (!in_array($schema['name'], self::READ_ONLY_TOOLS, true)) {
+                continue;
+            }
             $tools[] = [
                 'name'        => $schema['name'],
                 'description' => $schema['description'],
@@ -81,13 +99,29 @@ class WAA_MCP_Server {
             return $this->error($id, -32602, 'Invalid params: missing tool name');
         }
 
+        if (!in_array($name, self::READ_ONLY_TOOLS, true)) {
+            return $this->result($id, [
+                'content' => [[
+                    'type' => 'text',
+                    'text' => 'This tool is not available through the read-only MCP endpoint.',
+                ]],
+                'isError' => true,
+            ]);
+        }
+
         try {
             $result = $this->registry->execute($name, $arguments);
+            ($this->audit_log ?? new WAA_Audit_Log())->write($name, $arguments, $result, [
+                'provider' => 'mcp',
+                'model' => 'external-client',
+                'input_tokens' => 0,
+                'output_tokens' => 0,
+            ]);
             return $this->result($id, [
                 'content' => [
                     ['type' => 'text', 'text' => wp_json_encode($result, JSON_PRETTY_PRINT | JSON_UNESCAPED_UNICODE)],
                 ],
-                'isError' => false,
+                'isError' => isset($result['error']) || (($result['success'] ?? true) === false),
             ]);
         } catch (Throwable $e) {
             // MCP spec: tool errors are returned as content with isError=true, not JSON-RPC errors

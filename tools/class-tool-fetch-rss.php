@@ -91,8 +91,8 @@ class WAA_Tool_Fetch_Rss extends WAA_Tool_Base {
 
         // Custom URLs
         foreach ((array) ($input['custom_urls'] ?? []) as $url) {
-            $url = esc_url_raw($url);
-            if ($url) $feeds_to_fetch[$url] = $url;
+            $url = WAA_Network_Guard::public_url((string) $url);
+            if (!is_wp_error($url)) $feeds_to_fetch[$url] = $url;
         }
 
         // Default: single best general tech feed if nothing specified

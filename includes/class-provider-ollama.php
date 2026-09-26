@@ -28,7 +28,11 @@ class WAA_Provider_Ollama extends WAA_Provider_Base {
     }
 
     public function complete(string $system, array $messages, array $tools): array {
-        $url     = rtrim($this->base_url, '/') . '/api/chat';
+        $validated_url = WAA_Network_Guard::ollama_url($this->base_url);
+        if (is_wp_error($validated_url)) {
+            throw new RuntimeException(esc_html($validated_url->get_error_message()));
+        }
+        $url     = rtrim(esc_url_raw((string) $validated_url), '/') . '/api/chat';
         $payload = [
             'model'    => $this->model,
             'stream'   => false,

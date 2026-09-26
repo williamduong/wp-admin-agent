@@ -1,5 +1,5 @@
 {
-  "name": "goright-ai/wp-admin-ai-assistant",
+  "name": "williamduong/william-research-admin-agent",
   "description": "Development dependencies for WP Admin AI Assistant PHP integration tests.",
   "type": "wordpress-plugin",
   "require-dev": {

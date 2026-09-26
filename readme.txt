@@ -4,7 +4,7 @@ Tags: ai assistant, admin, automation, woocommerce, ollama
 Requires at least: 6.5
 Tested up to: 7.1
 Requires PHP: 8.2
-Stable tag: 0.3.1
+Stable tag: 0.4.0
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -104,6 +104,13 @@ The Free edition does not send product telemetry by default. Calls required to f
 5. Built-in documentation.
 
 == Changelog ==
+
+= 0.4.0 =
+
+* Bound confirmations to expiring, single-use server-side actions and restricted MCP to audited read-only tools.
+* Added recursive sensitive-data redaction, authenticated conversation encryption, retention controls, and privacy export/erase support.
+* Hardened remote requests, redirects, media imports, browser rendering, and administrator navigation.
+* Added per-tool capabilities, multisite lifecycle support, dependency audits, immutable CI actions, and expanded security tests.
 
 = 0.3.1 =
 

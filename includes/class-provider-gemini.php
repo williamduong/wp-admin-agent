@@ -26,7 +26,7 @@ class WAA_Provider_Gemini extends WAA_Provider_Base {
     }
 
     public function complete(string $system, array $messages, array $tools): array {
-        $url     = self::BASE_URL . urlencode($this->model) . ':generateContent?key=' . $this->api_key;
+        $url     = self::BASE_URL . urlencode($this->model) . ':generateContent';
         $payload = [
             'systemInstruction' => [
                 'parts' => [['text' => $system]],
@@ -49,7 +49,10 @@ class WAA_Provider_Gemini extends WAA_Provider_Base {
         $response = wp_remote_post($url, [
             'method'  => 'POST',
             'timeout' => 90,
-            'headers' => ['content-type' => 'application/json'],
+            'headers' => [
+                'content-type' => 'application/json',
+                'x-goog-api-key' => $this->api_key,
+            ],
             'body'    => wp_json_encode($payload),
         ]);
 

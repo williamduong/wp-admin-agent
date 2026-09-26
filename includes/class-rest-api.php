@@ -7,6 +7,9 @@ class WAA_REST_API {
     private const DEFAULT_CONVERSATION_TITLE = 'New conversation';
     private const PROVISIONAL_TITLE_LIMIT = 60;
     private const DEBUG_LOG_LIMIT = 80;
+    private const MAX_REQUEST_BYTES = 1048576;
+    private const MAX_REQUEST_DEPTH = 12;
+    private const MAX_REQUEST_ITEMS = 500;
 
     public function __construct() {
         add_action('rest_api_init', [$this, 'register_routes']);
@@ -18,7 +21,7 @@ class WAA_REST_API {
             'callback'            => [$this, 'handle_chat'],
             'permission_callback' => [$this, 'check_permission'],
             'args' => [
-                'message'         => ['required' => true,  'type' => 'string', 'sanitize_callback' => 'sanitize_textarea_field'],
+                'message'         => ['required' => true,  'type' => 'string', 'maxLength' => 10000, 'sanitize_callback' => 'sanitize_textarea_field'],
                 'conversation_id' => ['required' => false, 'type' => 'integer'],
                 'stream'          => ['required' => false, 'type' => 'boolean', 'default' => true],
             ],
@@ -93,6 +96,11 @@ class WAA_REST_API {
 
     public function handle_chat(WP_REST_Request $request): void {
         $body            = $request->get_json_params();
+        $payload_error = $this->validate_request_payload(is_array($body) ? $body : []);
+        if (is_wp_error($payload_error)) {
+            $this->sse_error($payload_error->get_error_message());
+            return;
+        }
         $message         = $request->get_param('message');
         $conversation_id = $request->get_param('conversation_id');
 
@@ -160,7 +168,7 @@ class WAA_REST_API {
         );
 
         try {
-            foreach ($agent->run($message, $history, $confirmation, $workflow) as $event) {
+            foreach ($agent->run($message, $history, $confirmation, $workflow, (int) $conversation_id) as $event) {
                 $this->record_debug_event($debug_turn, $event);
                 $this->sse_emit($event);
             }
@@ -201,6 +209,13 @@ class WAA_REST_API {
     public function test_connection(WP_REST_Request $request): WP_REST_Response {
         $settings = new WAA_Settings();
         $body     = $request->get_json_params() ?? [];
+        if (!is_array($body)) {
+            return new WP_REST_Response(['success' => false, 'error' => 'Invalid JSON payload.'], 400);
+        }
+        $payload_error = $this->validate_request_payload($body);
+        if (is_wp_error($payload_error)) {
+            return new WP_REST_Response(['success' => false, 'error' => $payload_error->get_error_message()], 413);
+        }
 
         // Prefer live form values from request body (not yet saved to DB)
         $provider_id = !empty($body['provider'])  ? $body['provider']  : $settings->get_provider();
@@ -208,6 +223,13 @@ class WAA_REST_API {
         $api_key     = (!empty($body['api_key'])    && $body['api_key']    !== '••••••••') ? $body['api_key']    : $settings->get_api_key();
         $gemini_key  = (!empty($body['gemini_key']) && $body['gemini_key'] !== '••••••••') ? $body['gemini_key'] : $settings->get_gemini_api_key();
         $ollama_url  = !empty($body['ollama_url']) ? $body['ollama_url'] : $settings->get_ollama_url();
+
+        if (!in_array($provider_id, ['anthropic', 'gemini', 'ollama', 'fake'], true)) {
+            return new WP_REST_Response(['success' => false, 'error' => 'Unsupported provider.'], 400);
+        }
+        if (!is_string($model) || preg_match('/^[A-Za-z0-9][A-Za-z0-9._:+\/-]{0,119}$/', $model) !== 1) {
+            return new WP_REST_Response(['success' => false, 'error' => 'Invalid model identifier.'], 400);
+        }
 
         $has_credential = match ($provider_id) {
             'gemini' => !empty($gemini_key),
@@ -256,6 +278,13 @@ class WAA_REST_API {
     public function save_plugin_settings(WP_REST_Request $request): WP_REST_Response {
         $settings = new WAA_Settings();
         $body     = $request->get_json_params();
+        if (!is_array($body)) {
+            return new WP_REST_Response(['success' => false, 'error' => 'Invalid JSON payload.'], 400);
+        }
+        $payload_error = $this->validate_request_payload($body);
+        if (is_wp_error($payload_error)) {
+            return new WP_REST_Response(['success' => false, 'error' => $payload_error->get_error_message()], 413);
+        }
 
         if (!empty($body['provider']))    $settings->set_provider($body['provider']);
         if (!empty($body['model']))       $settings->set_model($body['model']);
@@ -291,6 +320,10 @@ class WAA_REST_API {
     public function create_conversation(WP_REST_Request $request): WP_REST_Response {
         global $wpdb;
         $body     = $request->get_json_params() ?? [];
+        $payload_error = $this->validate_request_payload($body);
+        if (is_wp_error($payload_error)) {
+            return new WP_REST_Response(['error' => $payload_error->get_error_message()], 413);
+        }
         $messages = isset($body['messages']) && is_array($body['messages']) ? $body['messages'] : [];
         $history  = isset($body['history']) && is_array($body['history']) ? $body['history'] : [];
         $usage    = isset($body['usage']) && is_array($body['usage']) ? $body['usage'] : [];
@@ -315,7 +348,7 @@ class WAA_REST_API {
         $wpdb->insert(WAA_TABLE_CONVERSATIONS, [
             'user_id'  => get_current_user_id(),
             'title'    => $title,
-            'messages' => wp_json_encode($payload),
+            'messages' => $this->encode_conversation_payload($payload),
         ]);
         return new WP_REST_Response(['id' => $wpdb->insert_id], 201);
     }
@@ -341,6 +374,10 @@ class WAA_REST_API {
         global $wpdb;
 
         $body     = $request->get_json_params() ?? [];
+        $payload_error = $this->validate_request_payload($body);
+        if (is_wp_error($payload_error)) {
+            return new WP_REST_Response(['error' => $payload_error->get_error_message()], 413);
+        }
         $existing = $wpdb->get_row($wpdb->prepare(
             "SELECT title, messages FROM %i WHERE id = %d AND user_id = %d",
             WAA_TABLE_CONVERSATIONS,
@@ -363,7 +400,7 @@ class WAA_REST_API {
         ];
 
         $update_data = [
-            'messages' => wp_json_encode($payload),
+            'messages' => $this->encode_conversation_payload($payload),
         ];
 
         $resolved_title = $this->resolve_conversation_title(
@@ -451,6 +488,9 @@ class WAA_REST_API {
     }
 
     public function decode_conversation_payload(string $payload): array {
+        if (str_starts_with($payload, 'v2:')) {
+            $payload = (new WAA_Encryptor())->decrypt($payload);
+        }
         $decoded = json_decode($payload, true);
 
         if (!is_array($decoded)) {
@@ -479,6 +519,47 @@ class WAA_REST_API {
             'usage'    => [],
             'meta'     => ['archived' => false],
         ];
+    }
+
+    private function encode_conversation_payload(array $payload): string {
+        $json = wp_json_encode($payload);
+        if (!is_string($json)) {
+            throw new RuntimeException('Could not encode conversation data.');
+        }
+        return (new WAA_Encryptor())->encrypt($json);
+    }
+
+    private function validate_request_payload(array $payload): true|WP_Error {
+        $encoded = wp_json_encode($payload);
+        if (!is_string($encoded)) {
+            return new WP_Error('invalid_payload', 'The request payload could not be encoded.');
+        }
+        if (strlen($encoded) > self::MAX_REQUEST_BYTES) {
+            return new WP_Error('payload_too_large', 'The request payload is too large.');
+        }
+
+        return $this->validate_request_node($payload, 0);
+    }
+
+    private function validate_request_node(mixed $value, int $depth): true|WP_Error {
+        if ($depth > self::MAX_REQUEST_DEPTH) {
+            return new WP_Error('payload_too_deep', 'The request payload is nested too deeply.');
+        }
+        if (!is_array($value)) {
+            return true;
+        }
+        if (count($value) > self::MAX_REQUEST_ITEMS) {
+            return new WP_Error('payload_too_many_items', 'The request payload contains too many items.');
+        }
+
+        foreach ($value as $item) {
+            $result = $this->validate_request_node($item, $depth + 1);
+            if (is_wp_error($result)) {
+                return $result;
+            }
+        }
+
+        return true;
     }
 
     private function record_debug_event(array &$debug_turn, array $event): void {
@@ -580,6 +661,36 @@ class WAA_REST_API {
             return;
         }
 
+        $debug_mode = (new WAA_Settings())->get_debug_mode();
+        if ($debug_mode === 'off') {
+            return;
+        }
+
+        if ($debug_mode === 'compact') {
+            $entry = [
+                'turn_id' => $entry['turn_id'] ?? '',
+                'started_at' => $entry['started_at'] ?? '',
+                'completed_at' => $entry['completed_at'] ?? '',
+                'status' => $entry['status'] ?? '',
+                'provider' => $entry['provider'] ?? '',
+                'model' => $entry['model'] ?? '',
+                'usage' => $entry['usage'] ?? [],
+                'warnings' => $entry['warnings'] ?? [],
+                'errors' => $entry['errors'] ?? [],
+                'events' => array_values(array_filter(array_map(
+                    static function (array $event): ?array {
+                        $type = (string) ($event['type'] ?? '');
+                        if (!in_array($type, ['trace', 'usage', 'error', 'confirmation_required'], true)) {
+                            return null;
+                        }
+                        unset($event['input'], $event['result'], $event['confirmation']);
+                        return $event;
+                    },
+                    is_array($entry['events'] ?? null) ? $entry['events'] : []
+                ))),
+            ];
+        }
+
         global $wpdb;
         $existing_payload = $wpdb->get_var($wpdb->prepare(
             "SELECT messages FROM %i WHERE id = %d AND user_id = %d",
@@ -613,7 +724,7 @@ class WAA_REST_API {
 
         $wpdb->update(
             WAA_TABLE_CONVERSATIONS,
-            ['messages' => wp_json_encode($payload)],
+            ['messages' => $this->encode_conversation_payload($payload)],
             [
                 'id' => $conversation_id,
                 'user_id' => get_current_user_id(),
@@ -626,26 +737,7 @@ class WAA_REST_API {
     }
 
     private function sanitize_debug_value(mixed $value): mixed {
-        if (is_scalar($value) || $value === null) {
-            if (is_string($value)) {
-                return $this->truncate_debug_string($value);
-            }
-            return $value;
-        }
-
-        if (is_array($value)) {
-            $sanitized = [];
-            foreach ($value as $key => $item) {
-                $sanitized[$key] = $this->sanitize_debug_value($item);
-            }
-            return $sanitized;
-        }
-
-        if (is_object($value)) {
-            return $this->sanitize_debug_value((array) $value);
-        }
-
-        return $this->truncate_debug_string((string) $value);
+        return WAA_Data_Sanitizer::sanitize($value, 4000);
     }
 
     private function truncate_debug_string(string $value, int $limit = 4000): string {
@@ -909,6 +1001,15 @@ class WAA_REST_API {
     }
 
     public function handle_mcp(WP_REST_Request $request): WP_REST_Response {
+        $body = $request->get_json_params();
+        if (!is_array($body)) {
+            return new WP_REST_Response(['error' => 'Invalid JSON payload.'], 400);
+        }
+        $payload_error = $this->validate_request_payload($body);
+        if (is_wp_error($payload_error)) {
+            return new WP_REST_Response(['error' => $payload_error->get_error_message()], 413);
+        }
+
         $settings = new WAA_Settings();
         $server   = new WAA_MCP_Server(self::build_registry($settings->get_disabled_tools()));
         return $server->handle($request);
@@ -917,6 +1018,11 @@ class WAA_REST_API {
     public function get_ollama_models(WP_REST_Request $request): WP_REST_Response {
         $settings = new WAA_Settings();
         $base_url = rtrim($settings->get_ollama_url(), '/');
+        $validated_url = WAA_Network_Guard::ollama_url($base_url);
+        if (is_wp_error($validated_url)) {
+            return new WP_REST_Response(['error' => $validated_url->get_error_message()], 400);
+        }
+        $base_url = esc_url_raw((string) $validated_url);
 
         $response = wp_remote_get("$base_url/api/tags", ['timeout' => 5]);
 
@@ -933,7 +1039,10 @@ class WAA_REST_API {
 
         $models = [];
         foreach ($body['models'] as $m) {
-            $name = $m['name'];
+            $name = sanitize_text_field((string) ($m['name'] ?? ''));
+            if ($name === '' || strlen($name) > 120 || !preg_match('/^[A-Za-z0-9._:\/-]+$/', $name)) {
+                continue;
+            }
             $size = isset($m['size']) ? round($m['size'] / 1024 / 1024 / 1024, 1) . ' GB' : '';
             $models[$name] = $name . ($size ? " ($size)" : '');
         }

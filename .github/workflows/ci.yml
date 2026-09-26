@@ -11,22 +11,29 @@ jobs:
   validate:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-node@v4
+      - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5
+      - uses: actions/setup-node@a0853c24544627f65ddf259abe73b1d18a591444 # v5
         with:
-          node-version: '20'
+          node-version: '22'
           cache: npm
-      - uses: shivammathur/setup-php@v2
+      - uses: shivammathur/setup-php@b604ade2a87db23f8871b7182e69ec5e75effb45 # v2
         with:
           php-version: '8.2'
+          tools: composer:v2
       - name: Install JavaScript dependencies
         run: npm ci
+      - name: Audit JavaScript dependencies
+        run: npm audit --audit-level=high
       - name: Lint frontend
         run: npm run lint
       - name: Test frontend
         run: npm run test:js
       - name: Build frontend
         run: npm run build
+      - name: Install PHP dependencies
+        run: composer install --no-interaction --prefer-dist
+      - name: Audit PHP dependencies
+        run: composer audit
       - name: Check PHP syntax
         shell: bash
         run: find . -name '*.php' -not -path './vendor/*' -print0 | xargs -0 -n1 php -l
@@ -39,10 +46,43 @@ jobs:
           mkdir -p build
           unzip -q "$(find dist -maxdepth 1 -name 'william-research-admin-agent-*.zip' -print -quit)" -d build
       - name: Run WordPress Plugin Check
-        uses: wordpress/plugin-check-action@v1
+        uses: wordpress/plugin-check-action@10857da14b6c2246d15402b3e69f777edcf8c12e # v1
         with:
           build-dir: './build/william-research-admin-agent'
-      - uses: actions/upload-artifact@v4
+      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
         with:
           name: william-research-admin-agent
           path: dist/*.zip
+
+  php-integration:
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        multisite: ['false', 'true']
+    services:
+      mysql:
+        image: mysql:8.0
+        env:
+          MYSQL_DATABASE: wordpress_test
+          MYSQL_ROOT_PASSWORD: root
+        ports:
+          - 3306:3306
+        options: >-
+          --health-cmd="mysqladmin ping --silent"
+          --health-interval=10s
+          --health-timeout=5s
+          --health-retries=5
+    steps:
+      - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5
+      - uses: shivammathur/setup-php@b604ade2a87db23f8871b7182e69ec5e75effb45 # v2
+        with:
+          php-version: '8.2'
+          tools: composer:v2
+      - name: Install PHP dependencies
+        run: composer install --no-interaction --prefer-dist
+      - name: Install WordPress test suite
+        shell: bash
+        run: bash tests/install-wp-tests.sh wordpress_test root root 127.0.0.1 latest ${{ matrix.multisite }}
+      - name: Run PHP integration tests
+        run: vendor/bin/phpunit -c phpunit.xml.dist --testsuite integration

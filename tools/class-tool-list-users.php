@@ -6,7 +6,7 @@ class WAA_Tool_List_Users extends WAA_Tool_Base {
     public function get_name(): string { return 'list_users'; }
 
     public function get_description(): string {
-        return 'List WordPress users, optionally filtered by role.';
+        return 'List WordPress user IDs, display names, and roles, optionally filtered by role. Email addresses and login names are intentionally excluded.';
     }
 
     public function get_input_schema(): array {
@@ -29,7 +29,7 @@ class WAA_Tool_List_Users extends WAA_Tool_Base {
     public function execute(array $input): array {
         $args = [
             'number' => min((int) ($input['number'] ?? 20), 100),
-            'fields' => ['ID', 'user_login', 'user_email', 'display_name'],
+            'fields' => ['ID', 'display_name'],
         ];
 
         if (!empty($input['role'])) {
@@ -42,8 +42,6 @@ class WAA_Tool_List_Users extends WAA_Tool_Base {
             'users' => array_map(function ($u) {
                 return [
                     'id'           => $u->ID,
-                    'login'        => $u->user_login,
-                    'email'        => $u->user_email,
                     'display_name' => $u->display_name,
                     'roles'        => get_userdata($u->ID)->roles,
                 ];

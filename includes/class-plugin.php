@@ -12,14 +12,52 @@ class WAA_Plugin {
     public function init(): void {
         new WAA_REST_API();
         $this->register_admin_hooks();
+        add_action('waa_cleanup_agent_data', ['WAA_Audit_Log', 'cleanup_expired']);
+        add_action('wp_initialize_site', [self::class, 'initialize_new_site'], 20, 1);
+        if (!wp_next_scheduled('waa_cleanup_agent_data')) {
+            wp_schedule_event(time() + HOUR_IN_SECONDS, 'daily', 'waa_cleanup_agent_data');
+        }
     }
 
-    public static function activate(): void {
+    public static function activate(bool $network_wide = false): void {
+        if (is_multisite() && $network_wide) {
+            self::for_each_site(static function (int $site_id): void {
+                switch_to_blog((int) $site_id);
+                try {
+                    self::install_for_current_site($site_id);
+                } finally {
+                    restore_current_blog();
+                }
+            });
+            return;
+        }
+
+        self::install_for_current_site();
+    }
+
+    public static function initialize_new_site(WP_Site $site): void {
+        require_once ABSPATH . 'wp-admin/includes/plugin.php';
+        if (!is_plugin_active_for_network(plugin_basename(WAA_PLUGIN_DIR . 'wp-admin-agent.php'))) {
+            return;
+        }
+
+        switch_to_blog((int) $site->blog_id);
+        try {
+            self::install_for_current_site((int) $site->blog_id);
+        } finally {
+            restore_current_blog();
+        }
+    }
+
+    private static function install_for_current_site(?int $site_id = null): void {
         global $wpdb;
         $charset = $wpdb->get_charset_collate();
+        $prefix = $site_id !== null ? $wpdb->get_blog_prefix($site_id) : $wpdb->prefix;
+        $logs_table = $prefix . 'waa_logs';
+        $conversations_table = $prefix . 'waa_conversations';
         require_once ABSPATH . 'wp-admin/includes/upgrade.php';
 
-        dbDelta("CREATE TABLE IF NOT EXISTS " . WAA_TABLE_LOGS . " (
+        dbDelta("CREATE TABLE {$logs_table} (
             id             BIGINT UNSIGNED NOT NULL AUTO_INCREMENT,
             user_id        BIGINT UNSIGNED NOT NULL,
             tool_name      VARCHAR(100)    NOT NULL,
@@ -37,7 +75,7 @@ class WAA_Plugin {
             KEY idx_model    (provider, model)
         ) $charset;");
 
-        dbDelta("CREATE TABLE IF NOT EXISTS " . WAA_TABLE_CONVERSATIONS . " (
+        dbDelta("CREATE TABLE {$conversations_table} (
             id          BIGINT UNSIGNED NOT NULL AUTO_INCREMENT,
             user_id     BIGINT UNSIGNED NOT NULL,
             title       VARCHAR(255),
@@ -49,10 +87,46 @@ class WAA_Plugin {
         ) $charset;");
 
         update_option('waa_db_version', WAA_VERSION);
+        if (!wp_next_scheduled('waa_cleanup_agent_data')) {
+            wp_schedule_event(time() + HOUR_IN_SECONDS, 'daily', 'waa_cleanup_agent_data');
+        }
     }
 
-    public static function deactivate(): void {
-        // Per-user rate-limit transients expire automatically after one minute.
+    private static function for_each_site(callable $callback): void {
+        $batch_size = 100;
+        $processed = [];
+
+        do {
+            $query = [
+                'fields' => 'ids',
+                'number' => $batch_size,
+            ];
+            if ($processed !== []) {
+                $query['site__not_in'] = $processed;
+            }
+            $site_ids = get_sites($query);
+            foreach ($site_ids as $site_id) {
+                $site_id = (int) $site_id;
+                $callback($site_id);
+                $processed[] = $site_id;
+            }
+        } while (count($site_ids) === $batch_size);
+    }
+
+    public static function deactivate(bool $network_wide = false): void {
+        if (is_multisite() && $network_wide) {
+            self::for_each_site(static function (int $site_id): void {
+                switch_to_blog((int) $site_id);
+                try {
+                    wp_clear_scheduled_hook('waa_cleanup_agent_data');
+                } finally {
+                    restore_current_blog();
+                }
+            });
+            return;
+        }
+
+        wp_clear_scheduled_hook('waa_cleanup_agent_data');
     }
 
     private function register_admin_hooks(): void {
@@ -62,6 +136,8 @@ class WAA_Plugin {
         add_action('admin_menu',            [$this, 'add_settings_page']);
         add_action('wp_dashboard_setup',    [$this, 'add_dashboard_widget']);
         add_action('admin_init',            [$this, 'add_privacy_policy_content']);
+        add_filter('wp_privacy_personal_data_exporters', [$this, 'register_privacy_exporter']);
+        add_filter('wp_privacy_personal_data_erasers', [$this, 'register_privacy_eraser']);
     }
 
     public function maybe_handle_settings_save(): void {
@@ -114,6 +190,9 @@ class WAA_Plugin {
         $tab = isset($posted['tab']) ? sanitize_key($posted['tab']) : '';
         if ($tab === 'provider') {
             $settings->set_delete_data_on_uninstall(isset($posted['waa_delete_data_on_uninstall']));
+            if (isset($posted['waa_data_retention_days'])) {
+                $settings->set_data_retention_days((int) $posted['waa_data_retention_days']);
+            }
         }
 
         // Custom rules (textarea — may be empty, that's valid)
@@ -175,6 +254,7 @@ class WAA_Plugin {
             'model'       => $settings->get_model(),
             'pricing'     => WAA_Pricing::all_for_js(),
             'debugMode'   => $settings->get_debug_mode(),
+            'isPro'       => defined('WAA_PRO_VERSION'),
         ]);
     }
 
@@ -225,5 +305,95 @@ class WAA_Plugin {
             esc_html__('William Research Admin Agent', 'william-research-admin-agent'),
             wp_kses_post(wpautop($content))
         );
+    }
+
+    public function register_privacy_exporter(array $exporters): array {
+        $exporters['william-research-admin-agent'] = [
+            'exporter_friendly_name' => esc_html__('William Research Admin Agent', 'william-research-admin-agent'),
+            'callback' => [$this, 'export_personal_data'],
+        ];
+        return $exporters;
+    }
+
+    public function export_personal_data(string $email_address, int $page = 1): array {
+        $user = get_user_by('email', $email_address);
+        if (!$user) {
+            return ['data' => [], 'done' => true];
+        }
+
+        global $wpdb;
+        $limit = 50;
+        $offset = max(0, ($page - 1) * $limit);
+        $conversations = $wpdb->get_results($wpdb->prepare(
+            "SELECT id, title, messages, created_at, updated_at FROM %i WHERE user_id = %d ORDER BY id LIMIT %d OFFSET %d",
+            WAA_TABLE_CONVERSATIONS,
+            $user->ID,
+            $limit,
+            $offset
+        ), ARRAY_A);
+        $logs = $wpdb->get_results($wpdb->prepare(
+            "SELECT id, tool_name, params, result, status, provider, model, created_at FROM %i WHERE user_id = %d ORDER BY id LIMIT %d OFFSET %d",
+            WAA_TABLE_LOGS,
+            $user->ID,
+            $limit,
+            $offset
+        ), ARRAY_A);
+
+        $data = [];
+        $rest_api = new WAA_REST_API();
+        foreach ($conversations as $row) {
+            $conversation_data = $rest_api->decode_conversation_payload((string) $row['messages']);
+            $data[] = [
+                'group_id' => 'william-research-admin-agent-conversations',
+                'group_label' => esc_html__('Admin Agent conversations', 'william-research-admin-agent'),
+                'item_id' => 'conversation-' . $row['id'],
+                'data' => [
+                    ['name' => 'Title', 'value' => $row['title']],
+                    ['name' => 'Conversation data', 'value' => wp_json_encode($conversation_data)],
+                    ['name' => 'Created', 'value' => $row['created_at']],
+                    ['name' => 'Updated', 'value' => $row['updated_at']],
+                ],
+            ];
+        }
+        foreach ($logs as $row) {
+            $data[] = [
+                'group_id' => 'william-research-admin-agent-logs',
+                'group_label' => esc_html__('Admin Agent audit records', 'william-research-admin-agent'),
+                'item_id' => 'audit-' . $row['id'],
+                'data' => array_map(
+                    static fn(string $name, mixed $value): array => ['name' => $name, 'value' => (string) $value],
+                    array_keys($row),
+                    array_values($row)
+                ),
+            ];
+        }
+
+        return ['data' => $data, 'done' => count($conversations) < $limit && count($logs) < $limit];
+    }
+
+    public function register_privacy_eraser(array $erasers): array {
+        $erasers['william-research-admin-agent'] = [
+            'eraser_friendly_name' => esc_html__('William Research Admin Agent', 'william-research-admin-agent'),
+            'callback' => [$this, 'erase_personal_data'],
+        ];
+        return $erasers;
+    }
+
+    public function erase_personal_data(string $email_address, int $page = 1): array {
+        $user = get_user_by('email', $email_address);
+        if (!$user) {
+            return ['items_removed' => false, 'items_retained' => false, 'messages' => [], 'done' => true];
+        }
+
+        global $wpdb;
+        $conversations = $wpdb->delete(WAA_TABLE_CONVERSATIONS, ['user_id' => $user->ID], ['%d']);
+        $logs = $wpdb->delete(WAA_TABLE_LOGS, ['user_id' => $user->ID], ['%d']);
+
+        return [
+            'items_removed' => ($conversations + $logs) > 0,
+            'items_retained' => false,
+            'messages' => [],
+            'done' => true,
+        ];
     }
 }

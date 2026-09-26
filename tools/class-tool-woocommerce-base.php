@@ -85,7 +85,6 @@ abstract class WAA_Tool_WooCommerce_Base extends WAA_Tool_Base {
             'status' => $order->get_status(),
             'currency' => $order->get_currency(),
             'total' => $order->get_total(),
-            'customer_name' => trim($order->get_formatted_billing_full_name()),
             'created_at' => $order->get_date_created() ? $order->get_date_created()->date('c') : '',
             'item_count' => count($order->get_items()),
             'edit_url' => admin_url('admin.php?page=wc-orders&action=edit&id=' . $order->get_id()),

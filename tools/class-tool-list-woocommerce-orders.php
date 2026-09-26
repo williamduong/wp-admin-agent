@@ -6,7 +6,7 @@ class WAA_Tool_List_WooCommerce_Orders extends WAA_Tool_WooCommerce_Base {
     public function get_name(): string { return 'list_woocommerce_orders'; }
 
     public function get_description(): string {
-        return 'List WooCommerce orders with status, totals, customer name, and edit links.';
+        return 'List WooCommerce orders with status, totals, item counts, dates, and edit links. Customer identity and addresses are intentionally excluded.';
     }
 
     public function get_input_schema(): array {

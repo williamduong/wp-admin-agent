@@ -3,7 +3,7 @@
  * Plugin Name:       William Research Admin Agent
  * Plugin URI:        https://github.com/williamduong/wp-admin-agent
  * Description:       A privacy-conscious AI assistant for safe WordPress administration and draft workflows.
- * Version:           0.3.1
+ * Version:           0.4.0
  * Requires at least: 6.5
  * Requires PHP:      8.2
  * Author:            William Duong
@@ -15,7 +15,7 @@
 
 defined('ABSPATH') || exit;
 
-define('WAA_VERSION',             '0.3.1');
+define('WAA_VERSION',             '0.4.0');
 define('WAA_PLUGIN_DIR',          plugin_dir_path(__FILE__));
 define('WAA_PLUGIN_URL',          plugin_dir_url(__FILE__));
 define('WAA_TABLE_LOGS',          $GLOBALS['wpdb']->prefix . 'waa_logs');

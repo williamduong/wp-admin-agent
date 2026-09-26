@@ -1,10 +1,13 @@
 [CmdletBinding()]
 param(
-    [string] $OutputDirectory = (Join-Path (Resolve-Path (Join-Path $PSScriptRoot '..')).Path 'dist')
+    [string] $OutputDirectory
 )
 
 $ErrorActionPreference = 'Stop'
 $sourceRoot = (Resolve-Path (Join-Path $PSScriptRoot '..')).Path
+if ([string]::IsNullOrWhiteSpace($OutputDirectory)) {
+    $OutputDirectory = Join-Path $sourceRoot 'dist'
+}
 $pluginFile = Join-Path $sourceRoot 'wp-admin-agent.php'
 $versionMatch = Select-String -LiteralPath $pluginFile -Pattern '^ \* Version:\s+(.+)$'
 if (-not $versionMatch) {

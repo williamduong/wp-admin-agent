@@ -18,8 +18,8 @@ Node.js is required only when rebuilding the React frontend.
 
 ```bash
 cd /path/to/wordpress/wp-content/plugins
-git clone https://github.com/williamduong/wp-admin-asistant.git wp-admin-assistant
-wp plugin activate wp-admin-assistant
+git clone https://github.com/williamduong/wp-admin-agent.git william-research-admin-agent
+wp plugin activate william-research-admin-agent
 ```
 
 If WP-CLI is unavailable, clone or copy the directory to `wp-content/plugins/william-research-admin-agent`, then activate **William Research Admin Agent** from **Plugins → Installed Plugins**.

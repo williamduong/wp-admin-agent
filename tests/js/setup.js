@@ -30,6 +30,7 @@ global.waaData = {
     currentUser: { id: 1, name: 'Admin' },
     siteUrl:     'http://localhost',
     version:     '0.1.0',
+    isPro:       true,
 };
 
 // Mock crypto.randomUUID in jsdom

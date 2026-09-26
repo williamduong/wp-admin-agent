@@ -319,9 +319,8 @@ describe('useChat', () => {
                 yield { type: 'usage', input_tokens: 8, output_tokens: 2, cost_usd: 0.01 };
                 yield {
                     type: 'confirmation_required',
+                    action_id: 'action-confirm-1',
                     tool_name: 'deactivate_plugin',
-                    tool_use_id: 'tc_confirm',
-                    tool_input: { plugin_file: 'hello-dolly/hello.php' },
                     message: 'This will deactivate plugin `hello-dolly/hello.php`. Confirm to continue.',
                     confirmation: {
                         title: 'Approve change',
@@ -355,9 +354,8 @@ describe('useChat', () => {
 
         expect(result.current.pendingConfirmation).toEqual({
             approved: true,
+            action_id: 'action-confirm-1',
             tool_name: 'deactivate_plugin',
-            tool_use_id: 'tc_confirm',
-            tool_input: { plugin_file: 'hello-dolly/hello.php' },
             message: 'This will deactivate plugin `hello-dolly/hello.php`. Confirm to continue.',
             title: 'Approve change',
             summary: 'This will deactivate plugin `hello-dolly/hello.php`. Confirm to continue.',
@@ -384,20 +382,7 @@ describe('useChat', () => {
         expect(chatStreamMock.mock.calls[1][0]).toBe('Yes, proceed.');
         expect(chatStreamMock.mock.calls[1][4]).toEqual({
             approved: true,
-            tool_name: 'deactivate_plugin',
-            tool_use_id: 'tc_confirm',
-            tool_input: { plugin_file: 'hello-dolly/hello.php' },
-            message: 'This will deactivate plugin `hello-dolly/hello.php`. Confirm to continue.',
-            title: 'Approve change',
-            summary: 'This will deactivate plugin `hello-dolly/hello.php`. Confirm to continue.',
-            impact: 'Turns off active plugin behavior and may change site features immediately.',
-            riskLevel: 'destructive',
-            actionType: 'site_write',
-            isAsync: false,
-            confirmLabel: 'Confirm change',
-            cancelLabel: 'Cancel action',
-            currentState: null,
-            proposedState: null,
+            action_id: 'action-confirm-1',
         });
         expect(result.current.pendingConfirmation).toBeNull();
         expect(result.current.messages.at(-1).content).toBe('Confirmed. The plugin `hello-dolly/hello.php` has been deactivated.');
@@ -415,6 +400,7 @@ describe('useChat', () => {
             yield { type: 'usage', input_tokens: 12, output_tokens: 4, cost_usd: 0.02 };
             yield {
                 type: 'confirmation_required',
+                action_id: 'action-install-1',
                 tool_name: 'install_plugin',
                 tool_use_id: 'tc_install',
                 tool_input: { slug: 'woocommerce' },
@@ -491,7 +477,7 @@ describe('useChat', () => {
         updateConversationMock.mockResolvedValue({ success: true });
         parseSSEMock.mockImplementation(async function* () {
             yield { type: 'usage', input_tokens: 8, output_tokens: 2, cost_usd: 0.01 };
-            yield { type: 'confirmation_required', tool_name: 'switch_theme', tool_use_id: 'tc_theme', tool_input: { theme_slug: 'astra' }, message: 'This will switch the active theme to `astra`. Confirm to continue.' };
+            yield { type: 'confirmation_required', action_id: 'action-theme-1', tool_name: 'switch_theme', message: 'This will switch the active theme to `astra`. Confirm to continue.' };
             yield { type: 'done' };
         });
 

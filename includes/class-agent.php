@@ -107,9 +107,15 @@ class WAA_Agent {
         return $base;
     }
 
-    public function run(string $user_message, array $history = [], ?array $confirmation = null, ?array $workflow = null): Generator {
+    public function run(
+        string $user_message,
+        array $history = [],
+        ?array $confirmation = null,
+        ?array $workflow = null,
+        int $conversation_id = 0
+    ): Generator {
         if (($confirmation['approved'] ?? false) === true) {
-            yield from $this->run_confirmed_action($confirmation);
+            yield from $this->run_confirmed_action($confirmation, $conversation_id);
             return;
         }
 
@@ -190,13 +196,27 @@ class WAA_Agent {
                 $confirmation = $this->classify_action($tc['name'] ?? '', $tc['input'] ?? []);
 
                 if ($confirmation['requires_confirmation'] ?? false) {
+                    $action_id = WAA_Pending_Action::create(
+                        (string) $tc['name'],
+                        (string) $tc['id'],
+                        is_array($tc['input'] ?? null) ? $tc['input'] : [],
+                        $conversation_id
+                    );
                     yield [
                         'type' => 'confirmation_required',
-                        'tool_name' => $tc['name'],
-                        'tool_use_id' => $tc['id'],
-                        'tool_input' => $tc['input'] ?? [],
+                        'action_id' => $action_id,
+                        'tool_name' => (string) $tc['name'],
                         'message' => $confirmation['summary'] ?? $this->build_confirmation_message($tc['name'], $tc['input'] ?? []),
-                        'confirmation' => $confirmation,
+                        'confirmation' => [
+                            'action_type' => (string) ($confirmation['action_type'] ?? 'write'),
+                            'risk_level' => (string) ($confirmation['risk_level'] ?? 'sensitive'),
+                            'is_async' => (bool) ($confirmation['is_async'] ?? false),
+                            'title' => (string) ($confirmation['title'] ?? 'Approve change'),
+                            'summary' => (string) ($confirmation['summary'] ?? ''),
+                            'impact' => (string) ($confirmation['impact'] ?? ''),
+                            'confirm_label' => (string) ($confirmation['confirm_label'] ?? 'Confirm change'),
+                            'cancel_label' => (string) ($confirmation['cancel_label'] ?? 'Cancel action'),
+                        ],
                     ];
                     return;
                 }
@@ -477,10 +497,19 @@ class WAA_Agent {
         return true;
     }
 
-    private function run_confirmed_action(array $confirmation): Generator {
-        $tool_name = (string) ($confirmation['tool_name'] ?? '');
-        $tool_use_id = (string) ($confirmation['tool_use_id'] ?? '');
-        $tool_input = $confirmation['tool_input'] ?? [];
+    private function run_confirmed_action(array $confirmation, int $conversation_id): Generator {
+        $pending = WAA_Pending_Action::consume(
+            sanitize_text_field((string) ($confirmation['action_id'] ?? '')),
+            $conversation_id
+        );
+        if (is_wp_error($pending)) {
+            yield ['type' => 'error', 'message' => $pending->get_error_message()];
+            return;
+        }
+
+        $tool_name = (string) ($pending['tool_name'] ?? '');
+        $tool_use_id = (string) ($pending['tool_use_id'] ?? '');
+        $tool_input = $pending['tool_input'] ?? [];
 
         if (!$this->requires_confirmation($tool_name, $tool_input) || $tool_use_id === '' || !is_array($tool_input)) {
             yield ['type' => 'error', 'message' => 'The pending action could not be confirmed. Please try again.'];

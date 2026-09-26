@@ -163,6 +163,17 @@ $navigate_map = [
                     <tr>
                         <th><?php esc_html_e('Data retention', 'william-research-admin-agent'); ?></th>
                         <td>
+                            <label for="waa_data_retention_days">
+                                <?php esc_html_e('Automatically delete conversations and audit records older than', 'william-research-admin-agent'); ?>
+                            </label>
+                            <input type="number" id="waa_data_retention_days" name="waa_data_retention_days"
+                                   min="7" max="365" step="1"
+                                   value="<?php echo esc_attr((string) $settings->get_data_retention_days()); ?>"
+                                   style="width:80px">
+                            <?php esc_html_e('days.', 'william-research-admin-agent'); ?>
+                            <p class="description">
+                                <?php esc_html_e('Cleanup runs daily. The default is 30 days; allowed range is 7–365 days.', 'william-research-admin-agent'); ?>
+                            </p>
                             <label>
                                 <input type="checkbox" name="waa_delete_data_on_uninstall" value="1"
                                     <?php checked($settings->should_delete_data_on_uninstall()); ?>>
@@ -419,8 +430,13 @@ function waaOnProviderChange(p) {
     if (!sel) {
         return;
     }
-    sel.innerHTML = Object.entries(models)
-        .map(([v, m]) => `<option value="${v}">${m.label}</option>`).join('');
+    sel.replaceChildren();
+    for (const [value, item] of Object.entries(models)) {
+        const option = document.createElement('option');
+        option.value = value;
+        option.textContent = item.label;
+        sel.append(option);
+    }
     currentModel = sel.value;
     waaBuildPricingTable();
     waaUpdateModelInfo();
@@ -458,7 +474,13 @@ async function waaRefreshOllamaModels() {
         }
         WAA_PRICING.ollama = fetched;
         const sel = document.getElementById('waa_model');
-        sel.innerHTML = Object.entries(fetched).map(([v, m]) => `<option value="${v}">${m.label}</option>`).join('');
+        sel.replaceChildren();
+        for (const [value, item] of Object.entries(fetched)) {
+            const option = document.createElement('option');
+            option.value = value;
+            option.textContent = item.label;
+            sel.append(option);
+        }
         currentModel = sel.value;
         waaBuildPricingTable(); waaUpdateModelInfo();
     } catch(e) { alert('Could not reach Ollama: ' + e.message); }
@@ -532,15 +554,32 @@ function waaBuildPricingTable() {
         return;
     }
     const models = WAA_PRICING[currentProvider] ?? {};
-    let html = '<table class="waa-pricing-table"><thead><tr><th>Model</th><th>Input</th><th>Output</th><th>Context</th></tr></thead><tbody>';
-    for (const [id, m] of Object.entries(models)) {
-        const active = id === currentModel ? ' class="active"' : '';
-        const ctx    = m.ctx >= 1000000 ? (m.ctx/1000000).toFixed(1)+'M' : (m.ctx/1000)+'K';
-        const price  = m.free ? '<td class="waa-free" colspan="2">Free</td>' : `<td>$${m.in}/M</td><td>$${m.out}/M</td>`;
-        html += `<tr${active}><td>${m.label}</td>${price}<td>${ctx}</td></tr>`;
+    const table = document.createElement('table');
+    table.className = 'waa-pricing-table';
+    const header = table.createTHead().insertRow();
+    for (const label of ['Model', 'Input', 'Output', 'Context']) {
+        const th = document.createElement('th');
+        th.textContent = label;
+        header.append(th);
     }
-    html += '</tbody></table>';
-    panel.innerHTML = html;
+    const tbody = table.createTBody();
+    for (const [id, m] of Object.entries(models)) {
+        const row = tbody.insertRow();
+        if (id === currentModel) row.className = 'active';
+        const ctx    = m.ctx >= 1000000 ? (m.ctx/1000000).toFixed(1)+'M' : (m.ctx/1000)+'K';
+        row.insertCell().textContent = m.label;
+        if (m.free) {
+            const freeCell = row.insertCell();
+            freeCell.className = 'waa-free';
+            freeCell.colSpan = 2;
+            freeCell.textContent = 'Free';
+        } else {
+            row.insertCell().textContent = `$${m.in}/M`;
+            row.insertCell().textContent = `$${m.out}/M`;
+        }
+        row.insertCell().textContent = ctx;
+    }
+    panel.replaceChildren(table);
 }
 
 async function waaLoadStats() {
@@ -556,23 +595,53 @@ async function waaLoadStats() {
         const totalOut = parseInt(t.total_output ?? 0);
         const fmtT = n => n >= 1000000 ? (n/1000000).toFixed(2)+'M' : n >= 1000 ? (n/1000).toFixed(1)+'K' : String(n||0);
         const fmtC = c => c === 0 ? 'Free' : c < 0.01 ? `$${c.toFixed(6)}` : `$${c.toFixed(4)}`;
-        let html = `<div class="waa-stat-grid">
-            <div class="waa-stat-card"><div class="value">${t.total_calls||0}</div><div class="label">Tool calls</div></div>
-            <div class="waa-stat-card"><div class="value">${fmtC(data.total_cost||0)}</div><div class="label">Est. cost</div></div>
-            <div class="waa-stat-card"><div class="value">${fmtT(totalIn)}</div><div class="label">Input tokens</div></div>
-            <div class="waa-stat-card"><div class="value">${fmtT(totalOut)}</div><div class="label">Output tokens</div></div>
-        </div>`;
+        const fragment = document.createDocumentFragment();
+        const grid = document.createElement('div');
+        grid.className = 'waa-stat-grid';
+        for (const [value, label] of [
+            [String(t.total_calls || 0), 'Tool calls'],
+            [fmtC(Number(data.total_cost || 0)), 'Est. cost'],
+            [fmtT(totalIn), 'Input tokens'],
+            [fmtT(totalOut), 'Output tokens'],
+        ]) {
+            const card = document.createElement('div');
+            card.className = 'waa-stat-card';
+            const valueNode = document.createElement('div');
+            valueNode.className = 'value';
+            valueNode.textContent = value;
+            const labelNode = document.createElement('div');
+            labelNode.className = 'label';
+            labelNode.textContent = label;
+            card.append(valueNode, labelNode);
+            grid.append(card);
+        }
+        fragment.append(grid);
         if (data.by_model?.length) {
-            html += '<table class="waa-pricing-table" style="margin-top:8px"><thead><tr><th>Model</th><th>Calls</th><th>Tokens</th><th>Cost</th></tr></thead><tbody>';
+            const table = document.createElement('table');
+            table.className = 'waa-pricing-table';
+            table.style.marginTop = '8px';
+            const head = table.createTHead().insertRow();
+            for (const heading of ['Model', 'Calls', 'Tokens', 'Cost']) {
+                const cell = document.createElement('th');
+                cell.textContent = heading;
+                head.append(cell);
+            }
+            const body = table.createTBody();
             for (const r of data.by_model) {
                 const tok = fmtT(parseInt(r.input_tokens)+parseInt(r.output_tokens));
-                html += `<tr><td>${r.model||r.provider}</td><td>${r.calls}</td><td>${tok}</td><td>${fmtC(parseFloat(r.cost_usd||0))}</td></tr>`;
+                const row = body.insertRow();
+                for (const value of [r.model || r.provider || '', r.calls || 0, tok, fmtC(parseFloat(r.cost_usd || 0))]) {
+                    row.insertCell().textContent = String(value);
+                }
             }
-            html += '</tbody></table>';
+            fragment.append(table);
         }
-        panel.innerHTML = html || '<em style="color:#999;font-size:13px">No data yet.</em>';
+        panel.replaceChildren(fragment);
     } catch {
-        panel.innerHTML = '<em style="color:#d63638">Could not load stats.</em>';
+        const error = document.createElement('em');
+        error.style.color = '#d63638';
+        error.textContent = 'Could not load stats.';
+        panel.replaceChildren(error);
     }
 }
 

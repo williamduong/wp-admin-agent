@@ -75,6 +75,7 @@ class WAA_Provider_Fake extends WAA_Provider_Base {
             if ($last_tool_name === '' && ($message['role'] ?? '') === 'tool') {
                 $last_tool_name = (string) ($message['tool_name'] ?? '');
             }
+
         }
 
         return [

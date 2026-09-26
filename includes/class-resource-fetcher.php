@@ -22,19 +22,14 @@ class WAA_Resource_Fetcher {
      * @return array{ path: string, mime: string, filename: string, size: int }
      */
     public function fetch_image(string $url): array {
-        $url = esc_url_raw($url);
-
-        if (!filter_var($url, FILTER_VALIDATE_URL)) {
-            throw new RuntimeException('Invalid URL: ' . esc_html($url));
+        $validated_url = WAA_Network_Guard::public_url($url);
+        if (is_wp_error($validated_url)) {
+            throw new RuntimeException(esc_html($validated_url->get_error_message()));
         }
-
-        $scheme = wp_parse_url($url, PHP_URL_SCHEME);
-        if (!in_array($scheme, ['http', 'https'], true)) {
-            throw new RuntimeException("Only http/https URLs are allowed.");
-        }
+        $url = esc_url_raw((string) $validated_url);
 
         // HEAD first — check content-type and size without downloading
-        $head = wp_remote_head($url, [
+        $head = wp_safe_remote_head($url, [
             'timeout'    => 10,
             'user-agent' => 'WordPress/' . get_bloginfo('version') . '; WAA-Bot',
             'redirection' => 3,
@@ -73,6 +68,16 @@ class WAA_Resource_Fetcher {
         if (!in_array($mime, self::ALLOWED_MIME, true)) {
             wp_delete_file($tmp);
             throw new RuntimeException('File type ' . esc_html($mime) . ' is not allowed.');
+        }
+
+        if ($mime === 'image/svg+xml') {
+            try {
+                $this->sanitize_svg($tmp);
+            } catch (Throwable $e) {
+                wp_delete_file($tmp);
+                throw $e;
+            }
+            $size = filesize($tmp);
         }
 
         $filename = $this->extract_filename($url, $mime);
@@ -115,6 +120,59 @@ class WAA_Resource_Fetcher {
         $content_type = strtok($headers['content-type'] ?? '', ';');
         if ($content_type && !in_array($content_type, self::ALLOWED_MIME, true)) {
             throw new RuntimeException('Content-Type ' . esc_html((string) $content_type) . ' not allowed.');
+        }
+    }
+
+    private function sanitize_svg(string $path): void {
+        $svg = file_get_contents($path);
+        if (!is_string($svg)
+            || stripos($svg, '<!DOCTYPE') !== false
+            || stripos($svg, '<!ENTITY') !== false
+            || !class_exists('DOMDocument')) {
+            throw new RuntimeException('The SVG could not be safely processed.');
+        }
+
+        $previous = libxml_use_internal_errors(true);
+        $document = new DOMDocument();
+        $loaded = $document->loadXML($svg, LIBXML_NONET | LIBXML_NOBLANKS | LIBXML_NOERROR | LIBXML_NOWARNING);
+        libxml_clear_errors();
+        libxml_use_internal_errors($previous);
+        if (!$loaded || !$document->documentElement || strtolower($document->documentElement->localName) !== 'svg') {
+            throw new RuntimeException('The SVG is invalid.');
+        }
+
+        $allowed_elements = [
+            'svg', 'g', 'path', 'circle', 'ellipse', 'rect', 'line', 'polyline', 'polygon',
+            'title', 'desc', 'defs', 'lineargradient', 'radialgradient', 'stop', 'clippath', 'mask',
+        ];
+        $allowed_attributes = [
+            'xmlns', 'viewbox', 'width', 'height', 'fill', 'stroke', 'stroke-width',
+            'stroke-linecap', 'stroke-linejoin', 'd', 'x', 'y', 'x1', 'x2', 'y1', 'y2',
+            'cx', 'cy', 'r', 'rx', 'ry', 'points', 'transform', 'opacity', 'fill-opacity',
+            'stroke-opacity', 'offset', 'stop-color', 'stop-opacity', 'clip-path', 'mask',
+            'role', 'aria-hidden', 'focusable',
+        ];
+
+        $nodes = iterator_to_array($document->getElementsByTagName('*'));
+        foreach (array_reverse($nodes) as $node) {
+            if (!in_array(strtolower($node->localName), $allowed_elements, true)) {
+                $node->parentNode?->removeChild($node);
+                continue;
+            }
+            foreach (iterator_to_array($node->attributes ?? []) as $attribute) {
+                $name = strtolower($attribute->nodeName);
+                $value = (string) $attribute->nodeValue;
+                if (!in_array($name, $allowed_attributes, true)
+                    || str_starts_with($name, 'on')
+                    || preg_match('/(?:javascript:|data:|url\s*\()/i', $value)) {
+                    $node->removeAttributeNode($attribute);
+                }
+            }
+        }
+
+        $clean = $document->saveXML($document->documentElement);
+        if (!is_string($clean) || file_put_contents($path, $clean) === false) {
+            throw new RuntimeException('The sanitized SVG could not be saved.');
         }
     }
 

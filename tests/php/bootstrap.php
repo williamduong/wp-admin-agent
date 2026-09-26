@@ -25,3 +25,7 @@ function waa_tests_load_plugin(): void {
 tests_add_filter('muplugins_loaded', 'waa_tests_load_plugin');
 
 require $_tests_dir . '/includes/bootstrap.php';
+
+// Activation hooks are not invoked automatically by the WordPress PHPUnit
+// bootstrap. Install the plugin tables explicitly before integration tests.
+WAA_Plugin::activate(false);

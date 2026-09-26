@@ -35,14 +35,16 @@ class WAA_Settings {
     }
 
     public function set_model(string $model): void {
-        update_option('waa_model', sanitize_text_field($model));
+        $model = sanitize_text_field($model);
+        if (preg_match('/^[A-Za-z0-9][A-Za-z0-9._:+\/-]{0,119}$/', $model) === 1) {
+            update_option('waa_model', $model);
+        }
     }
 
     // --- Anthropic ---
 
     public function get_api_key(): string {
-        $encrypted = get_option('waa_api_key_enc', '');
-        return $encrypted ? $this->enc->decrypt($encrypted) : '';
+        return $this->get_encrypted_option('waa_api_key_enc');
     }
 
     public function set_api_key(string $key): void {
@@ -52,8 +54,7 @@ class WAA_Settings {
     // --- Gemini ---
 
     public function get_gemini_api_key(): string {
-        $encrypted = get_option('waa_gemini_key_enc', '');
-        return $encrypted ? $this->enc->decrypt($encrypted) : '';
+        return $this->get_encrypted_option('waa_gemini_key_enc');
     }
 
     public function set_gemini_api_key(string $key): void {
@@ -67,7 +68,10 @@ class WAA_Settings {
     }
 
     public function set_ollama_url(string $url): void {
-        update_option('waa_ollama_url', esc_url_raw($url));
+        $validated = WAA_Network_Guard::ollama_url($url);
+        if (!is_wp_error($validated)) {
+            update_option('waa_ollama_url', $validated);
+        }
     }
 
     // --- Custom rules (appended to system prompt) ---
@@ -93,8 +97,7 @@ class WAA_Settings {
     // --- Pexels (image search) ---
 
     public function get_pexels_api_key(): string {
-        $encrypted = get_option('waa_pexels_key_enc', '');
-        return $encrypted ? $this->enc->decrypt($encrypted) : '';
+        return $this->get_encrypted_option('waa_pexels_key_enc');
     }
 
     public function set_pexels_api_key(string $key): void {
@@ -122,6 +125,14 @@ class WAA_Settings {
         update_option('waa_delete_data_on_uninstall', $delete, false);
     }
 
+    public function get_data_retention_days(): int {
+        return max(7, min(365, (int) get_option('waa_data_retention_days', 30)));
+    }
+
+    public function set_data_retention_days(int $days): void {
+        update_option('waa_data_retention_days', max(7, min(365, $days)), false);
+    }
+
     // --- Misc ---
 
     public function get_max_tokens(): int {
@@ -135,5 +146,17 @@ class WAA_Settings {
             'fake'      => true,
             default     => !empty($this->get_api_key()),
         };
+    }
+
+    private function get_encrypted_option(string $option_name): string {
+        $encrypted = (string) get_option($option_name, '');
+        if ($encrypted === '') {
+            return '';
+        }
+        $decrypted = $this->enc->decrypt($encrypted);
+        if ($decrypted !== '' && !str_starts_with($encrypted, 'v2:')) {
+            update_option($option_name, $this->enc->encrypt($decrypted), false);
+        }
+        return $decrypted;
     }
 }
