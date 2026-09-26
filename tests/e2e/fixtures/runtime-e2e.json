@@ -1,0 +1,51 @@
+{
+  "responses": [
+    {
+      "when": {
+        "last_user": "Reply with the single word OK."
+      },
+      "response": {
+        "stop_reason": "end_turn",
+        "text": "OK",
+        "tool_calls": [],
+        "usage": {
+          "input_tokens": 7,
+          "output_tokens": 1
+        }
+      }
+    },
+    {
+      "when": {
+        "last_user": "Request a protected settings change."
+      },
+      "response": {
+        "stop_reason": "tool_use",
+        "text": "I prepared the protected settings change.",
+        "tool_calls": [
+          {
+            "id": "e2e_protected_settings",
+            "name": "update_site_settings",
+            "input": {
+              "updates": {
+                "blogname": "E2E should not apply before confirmation"
+              }
+            }
+          }
+        ],
+        "usage": {
+          "input_tokens": 11,
+          "output_tokens": 5
+        }
+      }
+    }
+  ],
+  "default": {
+    "stop_reason": "end_turn",
+    "text": "E2E fake provider fallback response.",
+    "tool_calls": [],
+    "usage": {
+      "input_tokens": 5,
+      "output_tokens": 4
+    }
+  }
+}
