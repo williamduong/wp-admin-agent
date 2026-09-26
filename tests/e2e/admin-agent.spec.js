@@ -6,11 +6,11 @@ test.beforeEach(async ({ page }) => {
     await page.goto('/wp-admin/');
 
     if (page.url().includes('wp-login.php')) {
-        await page.getByLabel('Username or Email Address').fill('admin');
-        await page.getByLabel('Password').fill('password');
+        await page.locator('#user_login').fill('admin');
+        await page.locator('#user_pass').fill('password');
         await Promise.all([
             page.waitForURL(/\/wp-admin\//),
-            page.getByRole('button', { name: 'Log In' }).click(),
+            page.locator('#wp-submit').click(),
         ]);
     }
 });
