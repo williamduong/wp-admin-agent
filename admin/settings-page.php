@@ -7,7 +7,8 @@ $custom_rules = $settings->get_custom_rules();
 $disabled     = $settings->get_disabled_tools();
 $pricing      = WAA_Pricing::all_for_js();
 
-$active_tab = sanitize_key($_GET['tab'] ?? 'provider');
+// phpcs:ignore WordPress.Security.NonceVerification.Recommended -- Read-only tab selection; no data is changed.
+$active_tab = isset($_GET['tab']) ? sanitize_key(wp_unslash($_GET['tab'])) : 'provider';
 
 // Build tool list for Tools tab
 $all_schemas  = WAA_REST_API::build_registry()->get_schemas(); // no disabled filter here — show all
@@ -48,6 +49,7 @@ $navigate_map = [
 <div class="wrap">
     <h1>WP Admin Agent — Settings</h1>
 
+    <?php // phpcs:ignore WordPress.Security.NonceVerification.Recommended -- Read-only success notice after a nonce-protected save. ?>
     <?php if (isset($_GET['saved'])): ?>
         <div class="notice notice-success is-dismissible"><p>Settings saved.</p></div>
     <?php endif; ?>

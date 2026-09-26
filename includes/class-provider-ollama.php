@@ -19,12 +19,12 @@ class WAA_Provider_Ollama extends WAA_Provider_Base {
     public function get_label(): string { return 'Ollama (Local)'; }
 
     public function get_model_instructions(): string {
-        return <<<INST
-You are running on a local Ollama model. Keep responses short and direct.
-- Tool support depends on the model. If a tool call fails, explain what you tried and suggest an alternative.
-- Prefer plain-text answers over tool calls when the answer is obvious.
-- Do not attempt parallel tool calls — call one tool at a time.
-INST;
+        return implode("\n", [
+            'You are running on a local Ollama model. Keep responses short and direct.',
+            '- Tool support depends on the model. If a tool call fails, explain what you tried and suggest an alternative.',
+            '- Prefer plain-text answers over tool calls when the answer is obvious.',
+            '- Do not attempt parallel tool calls — call one tool at a time.',
+        ]);
     }
 
     public function complete(string $system, array $messages, array $tools): array {
@@ -47,15 +47,17 @@ INST;
         ]);
 
         if (is_wp_error($response)) {
-            throw new RuntimeException('Ollama connection failed: ' . $response->get_error_message());
+            throw new RuntimeException('Ollama connection failed: ' . esc_html($response->get_error_message()));
         }
 
         $code = wp_remote_retrieve_response_code($response);
         $body = json_decode(wp_remote_retrieve_body($response), true);
 
         if ($code !== 200) {
-            $msg = $body['error'] ?? "HTTP $code";
-            throw new RuntimeException("Ollama error: $msg");
+            $msg = isset($body['error'])
+                ? sanitize_text_field((string) $body['error'])
+                : 'HTTP ' . (int) $code;
+            throw new RuntimeException('Ollama error: ' . esc_html($msg));
         }
 
         return $this->normalize($body);

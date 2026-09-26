@@ -26,7 +26,7 @@ class WAA_Media_Importer {
         } finally {
             // Always clean up the temp file
             if (file_exists($resource['path'])) {
-                unlink($resource['path']);
+                wp_delete_file($resource['path']);
             }
         }
 
@@ -59,7 +59,7 @@ class WAA_Media_Importer {
             ], $title ?: $filename);
         } finally {
             if (file_exists($tmp)) {
-                unlink($tmp);
+                wp_delete_file($tmp);
             }
         }
     }
@@ -73,7 +73,7 @@ class WAA_Media_Importer {
         );
 
         if (!empty($upload['error'])) {
-            throw new RuntimeException("Upload failed: " . $upload['error']);
+            throw new RuntimeException('Upload failed: ' . esc_html((string) $upload['error']));
         }
 
         $attachment = [
@@ -86,7 +86,7 @@ class WAA_Media_Importer {
         $attachment_id = wp_insert_attachment($attachment, $upload['file']);
 
         if (is_wp_error($attachment_id)) {
-            throw new RuntimeException("Failed to create attachment: " . $attachment_id->get_error_message());
+            throw new RuntimeException('Failed to create attachment: ' . esc_html($attachment_id->get_error_message()));
         }
 
         // Generate thumbnails and metadata

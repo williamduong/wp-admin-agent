@@ -14,15 +14,15 @@ class WAA_Provider_Gemini extends WAA_Provider_Base {
     public function get_label(): string { return 'Google Gemini'; }
 
     public function get_model_instructions(): string {
-        return <<<INST
-You are running on Google Gemini with function calling enabled. Critical rules:
-- To take ANY action (install plugin, create post, change settings, navigate, search images, etc.) you MUST invoke the corresponding function/tool. Never describe actions in JSON or code blocks — call the actual function.
-- If you feel like writing {"install_plugin": ...} or similar JSON, STOP — call install_plugin() instead.
-- Pass only parameters defined in the tool schema. Do not invent extra fields.
-- If a tool has no required parameters, call it with an empty argument object {}.
-- After calling tools and receiving results, always provide a clear text summary of what was done.
-- When the user requests a long article or structured draft, do not negotiate the scope down or ask whether you should shorten it. Draft the best valid article you can and call the appropriate content tool.
-INST;
+        return implode("\n", [
+            'You are running on Google Gemini with function calling enabled. Critical rules:',
+            '- To take ANY action (install plugin, create post, change settings, navigate, search images, etc.) you MUST invoke the corresponding function/tool. Never describe actions in JSON or code blocks — call the actual function.',
+            '- If you feel like writing {"install_plugin": ...} or similar JSON, STOP — call install_plugin() instead.',
+            '- Pass only parameters defined in the tool schema. Do not invent extra fields.',
+            '- If a tool has no required parameters, call it with an empty argument object {}.',
+            '- After calling tools and receiving results, always provide a clear text summary of what was done.',
+            '- When the user requests a long article or structured draft, do not negotiate the scope down or ask whether you should shorten it. Draft the best valid article you can and call the appropriate content tool.',
+        ]);
     }
 
     public function complete(string $system, array $messages, array $tools): array {
@@ -54,15 +54,17 @@ INST;
         ]);
 
         if (is_wp_error($response)) {
-            throw new RuntimeException($response->get_error_message());
+            throw new RuntimeException(esc_html($response->get_error_message()));
         }
 
         $code = wp_remote_retrieve_response_code($response);
         $body = json_decode(wp_remote_retrieve_body($response), true);
 
         if ($code !== 200) {
-            $msg = $body['error']['message'] ?? "HTTP $code";
-            throw new RuntimeException("Gemini error: $msg");
+            $msg = isset($body['error']['message'])
+                ? sanitize_text_field((string) $body['error']['message'])
+                : 'HTTP ' . (int) $code;
+            throw new RuntimeException('Gemini error: ' . esc_html($msg));
         }
 
         return $this->normalize($body);
