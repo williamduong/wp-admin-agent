@@ -271,8 +271,8 @@ class WAA_REST_API {
         $user_id = get_current_user_id();
         $include_archived = (bool) $request->get_param('include_archived');
         $rows    = $wpdb->get_results($wpdb->prepare(
-            "SELECT id, title, messages, created_at, updated_at FROM " . WAA_TABLE_CONVERSATIONS .
-            " WHERE user_id = %d ORDER BY updated_at DESC LIMIT 20",
+            "SELECT id, title, messages, created_at, updated_at FROM %i WHERE user_id = %d ORDER BY updated_at DESC LIMIT 20",
+            WAA_TABLE_CONVERSATIONS,
             $user_id
         ));
         $visible = [];
@@ -323,7 +323,8 @@ class WAA_REST_API {
     public function get_conversation(WP_REST_Request $request): WP_REST_Response {
         global $wpdb;
         $row = $wpdb->get_row($wpdb->prepare(
-            "SELECT * FROM " . WAA_TABLE_CONVERSATIONS . " WHERE id = %d AND user_id = %d",
+            "SELECT * FROM %i WHERE id = %d AND user_id = %d",
+            WAA_TABLE_CONVERSATIONS,
             $request->get_param('id'),
             get_current_user_id()
         ));
@@ -341,7 +342,8 @@ class WAA_REST_API {
 
         $body     = $request->get_json_params() ?? [];
         $existing = $wpdb->get_row($wpdb->prepare(
-            "SELECT title, messages FROM " . WAA_TABLE_CONVERSATIONS . " WHERE id = %d AND user_id = %d",
+            "SELECT title, messages FROM %i WHERE id = %d AND user_id = %d",
+            WAA_TABLE_CONVERSATIONS,
             $request->get_param('id'),
             get_current_user_id()
         ), ARRAY_A);
@@ -403,7 +405,8 @@ class WAA_REST_API {
     private function load_conversation_messages(int $id): array {
         global $wpdb;
         $row = $wpdb->get_var($wpdb->prepare(
-            "SELECT messages FROM " . WAA_TABLE_CONVERSATIONS . " WHERE id = %d AND user_id = %d",
+            "SELECT messages FROM %i WHERE id = %d AND user_id = %d",
+            WAA_TABLE_CONVERSATIONS,
             $id, get_current_user_id()
         ));
         if (!$row) {
@@ -417,7 +420,8 @@ class WAA_REST_API {
     private function load_conversation_meta(int $id): array {
         global $wpdb;
         $row = $wpdb->get_var($wpdb->prepare(
-            "SELECT messages FROM " . WAA_TABLE_CONVERSATIONS . " WHERE id = %d AND user_id = %d",
+            "SELECT messages FROM %i WHERE id = %d AND user_id = %d",
+            WAA_TABLE_CONVERSATIONS,
             $id,
             get_current_user_id()
         ));

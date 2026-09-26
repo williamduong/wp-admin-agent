@@ -56,7 +56,7 @@ $navigate_map = [
 
     <nav class="nav-tab-wrapper" style="margin-bottom:0">
         <?php foreach ($settings_tabs as $slug => $label): ?>
-            <a href="?page=wp-admin-agent&tab=<?php echo $slug; ?>"
+            <a href="<?php echo esc_url(add_query_arg(['page' => 'wp-admin-agent', 'tab' => $slug], admin_url('admin.php'))); ?>"
                class="nav-tab <?php echo $active_tab === $slug ? 'nav-tab-active' : ''; ?>">
                 <?php echo esc_html($label); ?>
             </a>
@@ -250,7 +250,7 @@ echo esc_html($prompt_preview);
                     <div>
                         <h3 style="margin:0">Available Tools</h3>
                         <p class="description" style="margin:4px 0 0">
-                            <?php echo count($all_schemas); ?> tools registered.
+                            <?php echo esc_html((string) count($all_schemas)); ?> tools registered.
                             Disabled tools are hidden from the AI — it cannot call them.
                         </p>
                     </div>
@@ -273,7 +273,7 @@ echo esc_html($prompt_preview);
                     <?php foreach ($all_schemas as $schema):
                         $name      = $schema['name'];
                         $is_on     = !in_array($name, $disabled, true);
-                        $schema_js = esc_attr(wp_json_encode($schema['input_schema'], JSON_PRETTY_PRINT | JSON_UNESCAPED_UNICODE));
+                        $schema_js = wp_json_encode($schema['input_schema'], JSON_PRETTY_PRINT | JSON_UNESCAPED_UNICODE);
                     ?>
                         <tr id="tool-row-<?php echo esc_attr($name); ?>" class="<?php echo $is_on ? '' : 'waa-tool-disabled'; ?>">
                             <td>
@@ -288,7 +288,7 @@ echo esc_html($prompt_preview);
                             <td>
                                 <button type="button" class="button button-small"
                                         onclick="waaShowSchema('<?php echo esc_js($name); ?>', this)"
-                                        data-schema="<?php echo $schema_js; ?>">
+                                         data-schema="<?php echo esc_attr($schema_js); ?>">
                                     JSON ▾
                                 </button>
                             </td>
@@ -306,7 +306,7 @@ echo esc_html($prompt_preview);
                 <h4 style="margin-top:24px;margin-bottom:6px">Debug mode <span style="font-weight:400;color:#666;font-size:12px">(tool call log in chat)</span></h4>
                 <select name="waa_debug_mode">
                     <?php foreach (['off' => 'Off', 'compact' => 'Compact — errors only', 'full' => 'Full — show inputs & outputs'] as $val => $label): ?>
-                        <option value="<?php echo $val; ?>" <?php selected($settings->get_debug_mode(), $val); ?>><?php echo esc_html($label); ?></option>
+                        <option value="<?php echo esc_attr($val); ?>" <?php selected($settings->get_debug_mode(), $val); ?>><?php echo esc_html($label); ?></option>
                     <?php endforeach; ?>
                 </select>
                 <p class="description" style="margin-top:4px">Controls tool execution detail shown in the chat widget. "Full" is useful for debugging.</p>
@@ -322,8 +322,8 @@ echo esc_html($prompt_preview);
                         <?php foreach ($kb_docs as $i => $doc): ?>
                         <button type="button"
                                 class="waa-doc-link <?php echo $i === 0 ? 'waa-doc-active' : ''; ?>"
-                                data-index="<?php echo $i; ?>"
-                                onclick="waaShowDoc(<?php echo $i; ?>)">
+                                data-index="<?php echo esc_attr((string) $i); ?>"
+                                onclick="waaShowDoc(<?php echo (int) $i; ?>)">
                             📄 <?php echo esc_html($doc['label']); ?>
                         </button>
                         <?php endforeach; ?>
