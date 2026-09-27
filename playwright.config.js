@@ -22,7 +22,9 @@ export default defineConfig({
         command: [
             'npx --yes @wp-playground/cli@3.1.55 server',
             '--port=9400',
-            '--workers=3',
+            // Playground needs enough PHP workers to avoid file-lock deadlocks,
+            // while keeping the count bounded for small CI runners.
+            '--workers=6',
             '--mount=.:/wordpress/wp-content/plugins/william-research-admin-agent',
             '--blueprint=tests/e2e/blueprint.json',
         ].join(' '),
