@@ -34,7 +34,7 @@ test('provider and retention settings persist through the real WordPress form', 
     await page.locator('#waa_data_retention_days').fill('14');
     await page.getByRole('button', { name: 'Save Settings' }).click();
 
-    await expect(page).toHaveURL(/page=wp-admin-agent.*saved=1/);
+    await page.reload();
     await expect(page.locator('#waa_provider')).toHaveValue('fake');
     await expect(page.locator('#waa_data_retention_days')).toHaveValue('14');
 });
@@ -71,7 +71,8 @@ test('provider configuration failures are shown in the browser', async ({ page }
     await page.goto('/wp-admin/admin.php?page=wp-admin-agent');
     await page.locator('#waa_provider').selectOption('anthropic');
     await page.getByRole('button', { name: 'Save Settings' }).click();
-    await expect(page).toHaveURL(/page=wp-admin-agent.*saved=1/);
+    await page.reload();
+    await expect(page.locator('#waa_provider')).toHaveValue('anthropic');
 
     await openAssistant(page);
     await page.getByRole('button', { name: 'Start a new session' }).click();
