@@ -24,14 +24,16 @@ if (!function_exists('wraa_fs')) {
             return $wraa_fs;
         }
 
-        $sdk_start = __DIR__ . '/vendor/freemius/start.php';
-        if (!file_exists($sdk_start)) {
-            return null;
-        }
-
-        require_once $sdk_start;
         if (!function_exists('fs_dynamic_init')) {
-            return null;
+            $sdk_start = __DIR__ . '/vendor/freemius/start.php';
+            if (!file_exists($sdk_start)) {
+                return null;
+            }
+
+            require_once $sdk_start;
+            if (!function_exists('fs_dynamic_init')) {
+                return null;
+            }
         }
 
         $wraa_fs = fs_dynamic_init([
