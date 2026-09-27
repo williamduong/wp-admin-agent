@@ -101,6 +101,22 @@ class SecurityDataTest extends WP_UnitTestCase {
         }
     }
 
+    public function test_admin_bundle_is_browser_ready_without_commonjs_runtime(): void {
+        $plugin = WAA_Plugin::get_instance();
+        $plugin->enqueue_assets();
+
+        $registered = wp_scripts()->registered['waa-admin-agent'] ?? null;
+        $this->assertInstanceOf(_WP_Dependency::class, $registered);
+        $this->assertSame([], $registered->deps);
+
+        $bundle = file_get_contents(WAA_PLUGIN_DIR . 'assets/js/admin-agent.js');
+        $this->assertIsString($bundle);
+        $this->assertSame(0, preg_match('/\brequire\s*\(/', $bundle));
+
+        wp_dequeue_script('waa-admin-agent');
+        wp_deregister_script('waa-admin-agent');
+    }
+
     public function test_activation_creates_current_site_tables(): void {
         WAA_Plugin::activate(false);
 

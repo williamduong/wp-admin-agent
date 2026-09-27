@@ -48,9 +48,11 @@ test('chat streams and the saved conversation can be loaded from history', async
     await expect(page.getByText(/Session #\d+/)).toBeVisible();
 
     await page.getByRole('button', { name: 'Start a new session' }).click();
+    await expect(page.getByText('Session chưa được tạo', { exact: true })).toBeVisible();
     await page.getByRole('button', { name: 'Session history' }).click();
-    await expect(page.getByText('Reply with the single word OK.', { exact: true })).toBeVisible();
-    await page.getByText('Reply with the single word OK.', { exact: true }).click();
+    const savedSession = page.getByText('Reply with the single word OK.', { exact: true }).first();
+    await expect(savedSession).toBeVisible();
+    await savedSession.click();
     await expect(page.getByText('OK', { exact: true })).toBeVisible();
 });
 

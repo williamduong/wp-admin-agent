@@ -94,12 +94,15 @@ class WAA_REST_API {
             || $route === '/' . self::NS . '/test-connection';
     }
 
-    public function handle_chat(WP_REST_Request $request): void {
+    public function handle_chat(WP_REST_Request $request) {
         $body            = $request->get_json_params();
         $payload_error = $this->validate_request_payload(is_array($body) ? $body : []);
         if (is_wp_error($payload_error)) {
-            $this->sse_error($payload_error->get_error_message());
-            return;
+            return new WP_Error(
+                'invalid_chat_payload',
+                $payload_error->get_error_message(),
+                ['status' => 400]
+            );
         }
         $message         = $request->get_param('message');
         $conversation_id = $request->get_param('conversation_id');
@@ -128,8 +131,11 @@ class WAA_REST_API {
                     ['type' => 'error', 'message' => 'AI provider not configured. Please go to Settings → Admin Agent.'],
                 ],
             ]);
-            $this->sse_error('AI provider not configured. Please go to Settings → Admin Agent.');
-            return;
+            return new WP_Error(
+                'provider_not_configured',
+                'AI provider not configured. Please go to Settings → Admin Agent.',
+                ['status' => 400]
+            );
         }
 
         $history = $this->resolve_history($body ?? [], (int) $conversation_id);

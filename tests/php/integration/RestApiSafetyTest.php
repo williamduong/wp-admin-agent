@@ -53,6 +53,27 @@ class RestApiSafetyTest extends WP_UnitTestCase {
         $this->assertSame('rate_limited', $response->get_data()['code']);
     }
 
+    public function test_chat_route_returns_json_error_when_provider_is_not_configured(): void {
+        $user_id = self::factory()->user->create(['role' => 'administrator']);
+        wp_set_current_user($user_id);
+        update_option('waa_provider', 'anthropic');
+        delete_option('waa_api_key_enc');
+
+        $request = new WP_REST_Request('POST', '/wp-admin-agent/v1/chat');
+        $request->set_body(wp_json_encode([
+            'message' => 'hello',
+        ]));
+        $request->set_header('content-type', 'application/json');
+        $response = rest_get_server()->dispatch($request);
+
+        $this->assertSame(400, $response->get_status());
+        $this->assertSame('provider_not_configured', $response->get_data()['code']);
+        $this->assertSame(
+            'AI provider not configured. Please go to Settings → Admin Agent.',
+            $response->get_data()['message']
+        );
+    }
+
     public function test_inline_history_takes_precedence_over_persisted_conversation_messages(): void {
         global $wpdb;
 

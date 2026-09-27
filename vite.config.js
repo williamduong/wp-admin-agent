@@ -9,13 +9,8 @@ export default defineConfig({
         emptyOutDir: true,
         rollupOptions: {
             input: 'src/index.jsx',
-            external: ['react', 'react-dom'],
             output: {
                 format: 'iife',
-                globals: {
-                    react:     'React',
-                    'react-dom': 'ReactDOM',
-                },
                 entryFileNames: 'js/admin-agent.js',
                 assetFileNames: 'css/admin-agent.css',
                 // Prevent hash suffix on filenames

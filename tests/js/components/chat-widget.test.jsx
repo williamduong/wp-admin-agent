@@ -98,8 +98,27 @@ describe('ChatWidget', () => {
     it('can switch to conversation history view from the header action', () => {
         render(<ChatWidget isOpen={true} onToggle={vi.fn()} />);
 
-        fireEvent.click(screen.getByTitle('Session history'));
+        fireEvent.click(screen.getByRole('button', { name: 'Session history' }));
 
         expect(screen.getByText('ConversationManager')).toBeInTheDocument();
+    });
+
+    it('exposes and runs the new-session action by its accessible name', () => {
+        const clearMessages = vi.fn();
+        useChatMock.mockReturnValue(buildChatState({ clearMessages }));
+
+        render(<ChatWidget isOpen={true} onToggle={vi.fn()} />);
+        fireEvent.click(screen.getByRole('button', { name: 'Start a new session' }));
+
+        expect(clearMessages).toHaveBeenCalledOnce();
+    });
+
+    it('prevents session navigation while a turn is still being persisted', () => {
+        useChatMock.mockReturnValue(buildChatState({ isLoading: true }));
+
+        render(<ChatWidget isOpen={true} onToggle={vi.fn()} />);
+
+        expect(screen.getByRole('button', { name: 'Session history' })).toBeDisabled();
+        expect(screen.getByRole('button', { name: 'Start a new session' })).toBeDisabled();
     });
 });

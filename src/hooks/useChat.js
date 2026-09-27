@@ -605,8 +605,6 @@ export function useChat() {
                 ));
             }
         } finally {
-            setIsLoading(false);
-            setActiveToolName(null);
             if (collectedNavUrl) setPendingNavUrl(collectedNavUrl);
             turnTrace.stream_ms = Date.now() - startTime;
             const nextUsage = {
@@ -681,6 +679,9 @@ export function useChat() {
                     // Leave local browser session intact even if persistence fails.
                 }
             }
+
+            setIsLoading(false);
+            setActiveToolName(null);
         }
     }, [activeWorkflow, apiHistory, conversationId, messages, sessionUsage]);
 

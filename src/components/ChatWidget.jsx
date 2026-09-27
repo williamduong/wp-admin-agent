@@ -88,11 +88,19 @@ export default function ChatWidget({ isOpen, onToggle }) {
                                 className={styles.iconBtn}
                                 onClick={() => setView(v => v === 'conversations' ? 'chat' : 'conversations')}
                                 title="Session history"
+                                aria-label="Session history"
                                 aria-pressed={view === 'conversations'}
+                                disabled={isLoading}
                             >
                                 📂
                             </button>
-                            <button className={styles.clearBtn} onClick={handleNewSession} title="Start a new session">
+                            <button
+                                className={styles.clearBtn}
+                                onClick={handleNewSession}
+                                title="Start a new session"
+                                aria-label="Start a new session"
+                                disabled={isLoading}
+                            >
                                 New
                             </button>
                         </div>
