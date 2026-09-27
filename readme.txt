@@ -4,7 +4,7 @@ Tags: ai assistant, admin, automation, woocommerce, ollama
 Requires at least: 6.5
 Tested up to: 7.1
 Requires PHP: 8.2
-Stable tag: 0.4.0
+Stable tag: 0.4.1
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -64,6 +64,13 @@ RSS publishers
 * Data sent: A normal HTTP request from the WordPress server. The publisher receives standard request metadata such as IP address and user agent.
 * Each publisher's terms and privacy policy apply. The plugin identifies the selected feed before it is requested.
 
+Freemius
+
+* Purpose: Optional opt-in telemetry, account management, add-on discovery, licensing, updates, and checkout for the separately distributed Pro add-on.
+* Data sent: Only after administrator consent, Freemius may receive site, plugin, administrator, and diagnostic metadata described in its privacy policy. Skipping opt-in keeps the Free plugin usable.
+* Terms: https://freemius.com/terms/
+* Privacy: https://freemius.com/privacy/
+
 = Installation =
 
 1. Upload the `william-research-admin-agent` directory to `/wp-content/plugins/`, or install an official release.
@@ -104,6 +111,11 @@ The Free edition does not send product telemetry by default. Calls required to f
 5. Built-in documentation.
 
 == Changelog ==
+
+= 0.4.1 =
+
+* Add the WordPress.org-compliant Freemius SDK integration for optional telemetry, account management, and discovery of the separately distributed Pro add-on.
+* Keep Free features available when the administrator skips Freemius opt-in.
 
 = 0.4.0 =
 

@@ -44,7 +44,11 @@ jobs:
         shell: bash
         run: |
           mkdir -p build
-          unzip -q "$(find dist -maxdepth 1 -name 'william-research-admin-agent-*.zip' -print -quit)" -d build
+          FREE_ZIP="$(find dist -maxdepth 1 -name 'william-research-admin-agent-[0-9]*.zip' -print -quit)"
+          test -n "$FREE_ZIP"
+          unzip -q "$FREE_ZIP" -d build
+          test -f build/william-research-admin-agent/wp-admin-agent.php
+          grep -q 'Plugin Name:.*William Research Admin Agent' build/william-research-admin-agent/wp-admin-agent.php
       - name: Run WordPress Plugin Check
         uses: wordpress/plugin-check-action@10857da14b6c2246d15402b3e69f777edcf8c12e # v1
         with:

@@ -1,10 +1,14 @@
 [CmdletBinding()]
 param(
-    [string] $OutputDirectory
+    [string] $OutputDirectory,
+    [string] $FreemiusSdkArchive
 )
 
 $ErrorActionPreference = 'Stop'
 $sourceRoot = (Resolve-Path (Join-Path $PSScriptRoot '..')).Path
+$freemiusSdkVersion = '2.13.4'
+$freemiusSdkSha256 = '24CBBCA0D370AC1635F98FC977C1667C260854A9A6EB6C3103F0D73B6DE3531E'
+$freemiusSdkUrl = "https://github.com/Freemius/wordpress-sdk/archive/refs/tags/$freemiusSdkVersion.zip"
 if ([string]::IsNullOrWhiteSpace($OutputDirectory)) {
     $OutputDirectory = Join-Path $sourceRoot 'dist'
 }
@@ -38,6 +42,26 @@ Copy-Item -LiteralPath (Join-Path $sourceRoot 'knowledge-base\00-free-user-guide
 foreach ($file in @('LICENSE', 'readme.txt', 'uninstall.php', 'wp-admin-agent.php')) {
     Copy-Item -LiteralPath (Join-Path $sourceRoot $file) -Destination (Join-Path $packageRoot $file)
 }
+
+$sdkArchivePath = $FreemiusSdkArchive
+if ([string]::IsNullOrWhiteSpace($sdkArchivePath)) {
+    $sdkArchivePath = Join-Path $stagingRoot "freemius-wordpress-sdk-$freemiusSdkVersion.zip"
+    Invoke-WebRequest -Uri $freemiusSdkUrl -OutFile $sdkArchivePath
+} else {
+    $sdkArchivePath = (Resolve-Path -LiteralPath $sdkArchivePath).Path
+}
+
+$actualSdkHash = (Get-FileHash -LiteralPath $sdkArchivePath -Algorithm SHA256).Hash
+if ($actualSdkHash -ne $freemiusSdkSha256) {
+    throw "Freemius SDK checksum mismatch. Expected $freemiusSdkSha256, received $actualSdkHash."
+}
+
+$sdkExtractRoot = Join-Path $stagingRoot 'freemius-sdk'
+Expand-Archive -LiteralPath $sdkArchivePath -DestinationPath $sdkExtractRoot
+$sdkSource = Join-Path $sdkExtractRoot "wordpress-sdk-$freemiusSdkVersion"
+$vendorRoot = Join-Path $packageRoot 'vendor'
+New-Item -ItemType Directory -Path $vendorRoot -Force | Out-Null
+Copy-Item -LiteralPath $sdkSource -Destination (Join-Path $vendorRoot 'freemius') -Recurse
 
 $zipPath = Join-Path $outputRoot "william-research-admin-agent-$version.zip"
 if (Test-Path -LiteralPath $zipPath) {

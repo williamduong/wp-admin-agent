@@ -3,7 +3,7 @@
  * Plugin Name:       William Research Admin Agent
  * Plugin URI:        https://github.com/williamduong/wp-admin-agent
  * Description:       A privacy-conscious AI assistant for safe WordPress administration and draft workflows.
- * Version:           0.4.0
+ * Version:           0.4.1
  * Requires at least: 6.5
  * Requires PHP:      8.2
  * Author:            William Duong
@@ -15,7 +15,54 @@
 
 defined('ABSPATH') || exit;
 
-define('WAA_VERSION',             '0.4.0');
+if (!function_exists('wraa_fs')) {
+    /** Return the Freemius instance used for opt-in, account, and add-on discovery. */
+    function wraa_fs() {
+        global $wraa_fs;
+
+        if (isset($wraa_fs)) {
+            return $wraa_fs;
+        }
+
+        $sdk_start = __DIR__ . '/vendor/freemius/start.php';
+        if (!file_exists($sdk_start)) {
+            return null;
+        }
+
+        require_once $sdk_start;
+        if (!function_exists('fs_dynamic_init')) {
+            return null;
+        }
+
+        $wraa_fs = fs_dynamic_init([
+            'id'               => '40099',
+            'slug'             => 'william-research-admin-agent',
+            'premium_slug'     => 'william-research-admin-agent-pro',
+            'type'             => 'plugin',
+            'public_key'       => 'pk_e5a299b6a3d29cfb5f9c5e832f928',
+            'is_premium'       => false,
+            'has_addons'       => true,
+            'has_paid_plans'   => false,
+            'is_org_compliant' => true,
+            'menu'             => [
+                'slug'       => 'wp-admin-agent',
+                'account'    => true,
+                'contact'    => false,
+                'support'    => false,
+                'parent'     => [
+                    'slug' => 'options-general.php',
+                ],
+            ],
+        ]);
+
+        return $wraa_fs;
+    }
+
+    wraa_fs();
+    do_action('wraa_fs_loaded');
+}
+
+define('WAA_VERSION',             '0.4.1');
 define('WAA_PLUGIN_DIR',          plugin_dir_path(__FILE__));
 define('WAA_PLUGIN_URL',          plugin_dir_url(__FILE__));
 define('WAA_TABLE_LOGS',          $GLOBALS['wpdb']->prefix . 'waa_logs');
