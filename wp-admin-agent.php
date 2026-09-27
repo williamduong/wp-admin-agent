@@ -3,7 +3,7 @@
  * Plugin Name:       William Research Admin Agent
  * Plugin URI:        https://github.com/williamduong/wp-admin-agent
  * Description:       A privacy-conscious AI assistant for safe WordPress administration and draft workflows.
- * Version:           0.4.1
+ * Version:           0.4.2
  * Requires at least: 6.5
  * Requires PHP:      8.2
  * Author:            William Duong
@@ -16,7 +16,7 @@
 defined('ABSPATH') || exit;
 
 if (!function_exists('wraa_fs')) {
-    /** Return the Freemius instance used for opt-in, account, and add-on discovery. */
+    /** Return the Freemius instance used only for optional opt-in and account access. */
     function wraa_fs() {
         global $wraa_fs;
 
@@ -37,16 +37,18 @@ if (!function_exists('wraa_fs')) {
         $wraa_fs = fs_dynamic_init([
             'id'               => '40099',
             'slug'             => 'william-research-admin-agent',
-            'premium_slug'     => 'william-research-admin-agent-pro',
             'type'             => 'plugin',
             'public_key'       => 'pk_e5a299b6a3d29cfb5f9c5e832f928',
             'is_premium'       => false,
-            'has_addons'       => true,
+            // WordPress.org Free must never discover, download, install, or update Pro.
+            'has_addons'       => false,
             'has_paid_plans'   => false,
             'is_org_compliant' => true,
             'menu'             => [
                 'slug'       => 'wp-admin-agent',
                 'account'    => true,
+                'addons'     => false,
+                'pricing'    => false,
                 'contact'    => false,
                 'support'    => false,
                 'parent'     => [
@@ -62,7 +64,7 @@ if (!function_exists('wraa_fs')) {
     do_action('wraa_fs_loaded');
 }
 
-define('WAA_VERSION',             '0.4.1');
+define('WAA_VERSION',             '0.4.2');
 define('WAA_PLUGIN_DIR',          plugin_dir_path(__FILE__));
 define('WAA_PLUGIN_URL',          plugin_dir_url(__FILE__));
 define('WAA_TABLE_LOGS',          $GLOBALS['wpdb']->prefix . 'waa_logs');

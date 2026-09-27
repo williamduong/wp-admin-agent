@@ -4,7 +4,7 @@ Tags: ai assistant, admin, automation, woocommerce, ollama
 Requires at least: 6.5
 Tested up to: 7.1
 Requires PHP: 8.2
-Stable tag: 0.4.1
+Stable tag: 0.4.2
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -66,8 +66,9 @@ RSS publishers
 
 Freemius
 
-* Purpose: Optional opt-in telemetry, account management, add-on discovery, licensing, updates, and checkout for the separately distributed Pro add-on.
+* Purpose: Optional opt-in telemetry and account management for the Free plugin. The Free plugin does not discover, download, install, or update Pro.
 * Data sent: Only after administrator consent, Freemius may receive site, plugin, administrator, and diagnostic metadata described in its privacy policy. Skipping opt-in keeps the Free plugin usable.
+* Pro distribution: The separately distributed Pro plugin is purchased outside WordPress Admin and installed manually by an administrator. Licensing and Pro updates begin only after Pro has been installed.
 * Terms: https://freemius.com/terms/
 * Privacy: https://freemius.com/privacy/
 
@@ -111,6 +112,11 @@ The Free edition does not send product telemetry by default. Calls required to f
 5. Built-in documentation.
 
 == Changelog ==
+
+= 0.4.2 =
+
+* Disabled Freemius add-on discovery, marketplace, pricing, download, installation, and update paths in the WordPress.org Free package.
+* Kept optional opt-in telemetry and account access while requiring administrators to purchase and install the separately distributed Pro plugin manually.
 
 = 0.4.1 =
 

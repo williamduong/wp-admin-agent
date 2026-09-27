@@ -13,6 +13,16 @@ if ([string]::IsNullOrWhiteSpace($OutputDirectory)) {
     $OutputDirectory = Join-Path $sourceRoot 'dist'
 }
 $pluginFile = Join-Path $sourceRoot 'wp-admin-agent.php'
+$pluginSource = Get-Content -LiteralPath $pluginFile -Raw
+if ($pluginSource -notmatch "'has_addons'\s*=>\s*false") {
+    throw 'Free package must explicitly disable Freemius add-on discovery.'
+}
+if ($pluginSource -match "'premium_slug'\s*=>") {
+    throw 'Free package must not declare a premium slug.'
+}
+if ($pluginSource -notmatch "'addons'\s*=>\s*false" -or $pluginSource -notmatch "'pricing'\s*=>\s*false") {
+    throw 'Free package must explicitly disable Freemius add-on and pricing menus.'
+}
 $versionMatch = Select-String -LiteralPath $pluginFile -Pattern '^ \* Version:\s+(.+)$'
 if (-not $versionMatch) {
     throw 'Unable to read plugin version.'
