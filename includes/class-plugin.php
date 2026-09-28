@@ -216,7 +216,7 @@ class WAA_Plugin {
         exit;
     }
 
-    public function enqueue_assets(): void {
+    public function enqueue_assets(string $hook_suffix = ''): void {
         if (!current_user_can('manage_options')) return;
 
         $js_path = WAA_PLUGIN_DIR . 'assets/js/admin-agent.js';
@@ -255,6 +255,52 @@ class WAA_Plugin {
             'pricing'     => WAA_Pricing::all_for_js(),
             'debugMode'   => $settings->get_debug_mode(),
             'isPro'       => defined('WAA_PRO_VERSION'),
+        ]);
+
+        if ($hook_suffix !== 'settings_page_wp-admin-agent') {
+            return;
+        }
+
+        $settings_js_path  = WAA_PLUGIN_DIR . 'admin/settings-page.js';
+        $settings_css_path = WAA_PLUGIN_DIR . 'admin/settings-page.css';
+
+        wp_enqueue_script(
+            'waa-admin-agent-settings',
+            WAA_PLUGIN_URL . 'admin/settings-page.js',
+            ['waa-admin-agent'],
+            file_exists($settings_js_path) ? filemtime($settings_js_path) : WAA_VERSION,
+            true
+        );
+        wp_enqueue_style(
+            'waa-admin-agent-settings',
+            WAA_PLUGIN_URL . 'admin/settings-page.css',
+            [],
+            file_exists($settings_css_path) ? filemtime($settings_css_path) : WAA_VERSION
+        );
+
+        $docs = [];
+        foreach (glob(WAA_PLUGIN_DIR . 'knowledge-base/*.md') as $path) {
+            $filename = basename($path);
+            if (str_starts_with($filename, '.')) {
+                continue;
+            }
+            $raw_name = preg_replace('/^\d+-/', '', pathinfo($filename, PATHINFO_FILENAME));
+            $docs[] = [
+                'file'    => $filename,
+                'label'   => ucwords(str_replace('-', ' ', $raw_name)),
+                'content' => file_get_contents($path),
+            ];
+        }
+        usort($docs, fn($left, $right) => strcmp($left['file'], $right['file']));
+
+        wp_localize_script('waa-admin-agent-settings', 'waaSettingsData', [
+            'provider' => $settings->get_provider(),
+            'model'    => $settings->get_model(),
+            'pricing'  => WAA_Pricing::all_for_js(),
+            'docs'     => array_map(
+                fn($doc) => ['label' => $doc['label'], 'content' => $doc['content']],
+                $docs
+            ),
         ]);
     }
 

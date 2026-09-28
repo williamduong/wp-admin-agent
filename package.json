@@ -1,6 +1,6 @@
 {
   "name": "wp-admin-agent",
-  "version": "0.4.2",
+  "version": "0.4.3",
   "private": true,
   "type": "module",
   "scripts": {
@@ -15,7 +15,7 @@
     "test:js": "vitest run tests/js --coverage",
     "test:e2e": "playwright test",
     "test:e2e:mocked": "playwright test --config=playwright.mocked.config.js",
-    "lint": "eslint src --ext .js,.jsx"
+    "lint": "eslint src admin/settings-page.js --ext .js,.jsx"
   },
   "devDependencies": {
     "@playwright/test": "^1.44.0",

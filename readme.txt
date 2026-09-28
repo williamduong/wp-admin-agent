@@ -1,10 +1,10 @@
 === William Research Admin Agent ===
-Contributors: williamduong
+Contributors: williamduongrn
 Tags: ai assistant, admin, automation, woocommerce, ollama
 Requires at least: 6.5
 Tested up to: 7.1
 Requires PHP: 8.2
-Stable tag: 0.4.2
+Stable tag: 0.4.3
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -62,7 +62,19 @@ RSS publishers
 
 * Purpose: Fetch a selected public RSS feed only when an administrator requests current news or feed content.
 * Data sent: A normal HTTP request from the WordPress server. The publisher receives standard request metadata such as IP address and user agent.
-* Each publisher's terms and privacy policy apply. The plugin identifies the selected feed before it is requested.
+* The plugin identifies the selected feed before it is requested. Built-in presets may contact these publishers:
+* Ars Technica: Terms https://arstechnica.com/uncategorized/2009/01/user-agreement/ — Privacy https://arstechnica.com/uncategorized/2009/01/privacy-policy/
+* TechCrunch: Terms https://techcrunch.com/terms-of-service/ — Privacy https://techcrunch.com/privacy-policy/
+* The Verge (Vox Media): Terms https://www.voxmedia.com/legal/terms-of-use — Privacy https://www.voxmedia.com/legal/privacy-notice
+* WIRED: Terms https://www.wired.com/about/user-agreement/ — Privacy https://www.wired.com/about/privacy-policy/
+* MIT Technology Review: Terms https://www.technologyreview.com/terms-of-service/ — Privacy https://www.technologyreview.com/privacy-policy/
+* ScienceDaily: Terms https://www.sciencedaily.com/terms.htm — Privacy https://www.sciencedaily.com/privacy.htm
+* Phys.org (Science X): Terms https://sciencex.com/help/terms/ — Privacy https://sciencex.com/help/privacy/
+* Nature: Terms https://www.nature.com/info/terms-and-conditions — Privacy https://www.nature.com/info/privacy
+* NASA: Privacy policy and important notices https://www.nasa.gov/privacy/
+* European Space Agency: Terms https://www.esa.int/Services/Terms_and_conditions — Privacy https://www.esa.int/Services/Privacy_notice
+* Google News: Terms https://policies.google.com/terms — Privacy https://policies.google.com/privacy
+* For a custom RSS URL supplied by the administrator, the terms and privacy policy of that selected publisher apply.
 
 Freemius
 
@@ -85,7 +97,7 @@ Freemius
 
 = Does the plugin include AI usage? =
 
-No. The Free edition uses credentials or an Ollama endpoint supplied by the site administrator. Provider billing and policies belong to that provider account.
+Yes. The plugin provides an AI assistant and sends administrator-initiated chat requests to the selected Anthropic, Google Gemini, or Ollama provider as described in External services. The plugin does not include provider credits: credentials or an Ollama endpoint are supplied by the site administrator, and provider billing and policies belong to that provider account.
 
 = Can the Free edition publish content? =
 
@@ -112,6 +124,12 @@ The Free edition does not send product telemetry by default. Calls required to f
 5. Built-in documentation.
 
 == Changelog ==
+
+= 0.4.3 =
+
+* Clarified AI usage and documented terms and privacy links for every built-in RSS publisher.
+* Moved the Settings screen's static CSS and JavaScript into properly enqueued assets.
+* Corrected the WordPress.org contributor username and re-audited global prefixes.
 
 = 0.4.2 =
 

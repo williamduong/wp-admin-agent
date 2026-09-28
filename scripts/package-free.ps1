@@ -29,6 +29,40 @@ if (-not $versionMatch) {
 }
 $version = $versionMatch.Matches[0].Groups[1].Value.Trim()
 
+$readmePath = Join-Path $sourceRoot 'readme.txt'
+$readmeSource = Get-Content -LiteralPath $readmePath -Raw
+$stableTagMatch = Select-String -LiteralPath $readmePath -Pattern '^Stable tag:\s+(.+)$'
+if (-not $stableTagMatch -or $stableTagMatch.Matches[0].Groups[1].Value.Trim() -ne $version) {
+    throw 'Plugin header version and readme stable tag must match.'
+}
+if ($readmeSource -notmatch '(?m)^Contributors:\s*williamduongrn\s*$') {
+    throw 'The WordPress.org contributor username must be williamduongrn.'
+}
+foreach ($requiredDisclosure in @(
+    'https://www.voxmedia.com/legal/terms-of-use',
+    'https://www.voxmedia.com/legal/privacy-notice',
+    'https://www.sciencedaily.com/terms.htm',
+    'https://www.sciencedaily.com/privacy.htm'
+)) {
+    if (-not $readmeSource.Contains($requiredDisclosure)) {
+        throw "Missing required external-service disclosure: $requiredDisclosure"
+    }
+}
+if ($readmeSource -match '(?ms)= Does the plugin include AI usage\? =\s+No\.') {
+    throw 'The AI usage FAQ must not contradict the plugin description.'
+}
+
+$settingsPage = Join-Path $sourceRoot 'admin\settings-page.php'
+$settingsPageSource = Get-Content -LiteralPath $settingsPage -Raw
+if ($settingsPageSource -match '<(?:script|style)(?:\s|>)') {
+    throw 'Static Settings screen scripts and styles must be enqueued, not printed inline.'
+}
+foreach ($asset in @('admin\settings-page.js', 'admin\settings-page.css')) {
+    if (-not (Test-Path -LiteralPath (Join-Path $sourceRoot $asset))) {
+        throw "Missing enqueued Settings screen asset: $asset"
+    }
+}
+
 $outputRoot = [System.IO.Path]::GetFullPath($OutputDirectory)
 New-Item -ItemType Directory -Path $outputRoot -Force | Out-Null
 $stagingRoot = Join-Path $outputRoot '.staging-william-research-admin-agent'

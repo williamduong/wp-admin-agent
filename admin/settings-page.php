@@ -78,7 +78,7 @@ $navigate_map = [
                     <tr>
                         <th><label for="waa_provider">AI Provider</label></th>
                         <td>
-                            <select id="waa_provider" name="waa_provider" onchange="waaOnProviderChange(this.value)">
+                            <select id="waa_provider" name="waa_provider">
                                 <option value="anthropic" <?php selected($provider,'anthropic'); ?>>Anthropic (Claude)</option>
                                 <option value="gemini"    <?php selected($provider,'gemini'); ?>>Google Gemini</option>
                                 <option value="ollama"    <?php selected($provider,'ollama'); ?>>Ollama (Local)</option>
@@ -93,7 +93,7 @@ $navigate_map = [
                         <th><label for="waa_model">Model</label></th>
                         <td>
                             <div style="display:flex;gap:8px;align-items:center">
-                                <select id="waa_model" name="waa_model" onchange="waaOnModelChange(this.value)">
+                                <select id="waa_model" name="waa_model">
                                     <?php foreach ($pricing[$provider] ?? [] as $id => $info): ?>
                                         <option value="<?php echo esc_attr($id); ?>" <?php selected($model,$id); ?>>
                                             <?php echo esc_html($info['label']); ?>
@@ -101,7 +101,6 @@ $navigate_map = [
                                     <?php endforeach; ?>
                                 </select>
                                 <button type="button" id="waa-refresh-models" class="button button-small"
-                                        onclick="waaRefreshOllamaModels()"
                                         <?php echo $provider !== 'ollama' ? 'style="display:none"' : ''; ?>>
                                     ↺ Refresh
                                 </button>
@@ -266,8 +265,8 @@ echo esc_html($prompt_preview);
                         </p>
                     </div>
                     <div style="display:flex;gap:8px">
-                        <button type="button" class="button button-small" onclick="waaToggleAll(true)">Enable all</button>
-                        <button type="button" class="button button-small" onclick="waaToggleAll(false)">Disable all</button>
+                        <button type="button" class="button button-small" data-waa-toggle-all="1">Enable all</button>
+                        <button type="button" class="button button-small" data-waa-toggle-all="0">Disable all</button>
                     </div>
                 </div>
 
@@ -290,7 +289,7 @@ echo esc_html($prompt_preview);
                             <td>
                                 <input type="checkbox" name="waa_tool_<?php echo esc_attr($name); ?>"
                                        value="1" <?php checked($is_on); ?>
-                                       onchange="waaToolToggle('<?php echo esc_js($name); ?>', this.checked)">
+                                       data-tool-name="<?php echo esc_attr($name); ?>">
                             </td>
                             <td><code style="font-size:12px"><?php echo esc_html($name); ?></code></td>
                             <td style="font-size:13px;color:<?php echo $is_on ? '#111' : '#999'; ?>">
@@ -298,7 +297,7 @@ echo esc_html($prompt_preview);
                             </td>
                             <td>
                                 <button type="button" class="button button-small"
-                                        onclick="waaShowSchema('<?php echo esc_js($name); ?>', this)"
+                                        data-tool-name="<?php echo esc_attr($name); ?>"
                                          data-schema="<?php echo esc_attr($schema_js); ?>">
                                     JSON ▾
                                 </button>
@@ -334,7 +333,7 @@ echo esc_html($prompt_preview);
                         <button type="button"
                                 class="waa-doc-link <?php echo $i === 0 ? 'waa-doc-active' : ''; ?>"
                                 data-index="<?php echo esc_attr((string) $i); ?>"
-                                onclick="waaShowDoc(<?php echo (int) $i; ?>)">
+                                >
                             📄 <?php echo esc_html($doc['label']); ?>
                         </button>
                         <?php endforeach; ?>
@@ -374,360 +373,3 @@ echo esc_html($prompt_preview);
 
     </div>
 </div>
-
-<style>
-.waa-pricing-table { border-collapse:collapse; width:100%; font-size:12px; }
-.waa-pricing-table th { text-align:left; padding:4px 8px; background:#f6f7f7; border:1px solid #e2e4e7; }
-.waa-pricing-table td { padding:4px 8px; border:1px solid #e2e4e7; white-space:nowrap; }
-.waa-pricing-table tr.active td { background:#f0f6fc; font-weight:600; }
-.waa-free { color:#00a32a; font-weight:600; }
-.waa-stat-grid { display:grid; grid-template-columns:1fr 1fr; gap:8px; margin-bottom:12px; }
-.waa-stat-card { background:#f6f7f7; border:1px solid #e2e4e7; border-radius:6px; padding:10px 12px; }
-.waa-stat-card .value { font-size:20px; font-weight:700; color:#2271b1; }
-.waa-stat-card .label { font-size:11px; color:#666; margin-top:2px; }
-.waa-tool-disabled td { opacity:.5; }
-#waa-tools-table code { background:#f0f0f0; padding:2px 6px; border-radius:3px; }
-/* Docs tab */
-.waa-doc-link { display:block; width:100%; text-align:left; background:none; border:none; padding:8px 16px; font-size:13px; cursor:pointer; color:#1d2327; border-left:3px solid transparent; line-height:1.4; }
-.waa-doc-link:hover { background:#f6f7f7; }
-.waa-doc-link.waa-doc-active { background:#f0f6fc; border-left-color:#2271b1; color:#2271b1; font-weight:600; }
-#waa-docs-content { font-size:14px; line-height:1.7; color:#1d2327; }
-#waa-docs-content .waa-doc-h { border-bottom:1px solid #e2e4e7; padding-bottom:6px; margin-top:24px; margin-bottom:12px; }
-#waa-docs-content h1.waa-doc-h { font-size:22px; }
-#waa-docs-content h2.waa-doc-h { font-size:18px; }
-#waa-docs-content h3.waa-doc-h { font-size:15px; border-bottom:none; }
-#waa-docs-content .waa-doc-p { margin:6px 0; }
-#waa-docs-content .waa-doc-code { background:#f6f7f7; border:1px solid #e2e4e7; border-radius:4px; padding:12px 16px; overflow-x:auto; font-size:12px; line-height:1.6; margin:12px 0; }
-#waa-docs-content code { background:#f0f0f0; padding:1px 5px; border-radius:3px; font-size:12px; }
-#waa-docs-content li { margin:3px 0 3px 20px; list-style:disc; }
-#waa-docs-content strong { color:#1d2327; }
-.waa-doc-table { border-collapse:collapse; width:100%; font-size:13px; margin:12px 0; }
-.waa-doc-table th { background:#f6f7f7; text-align:left; padding:6px 10px; border:1px solid #e2e4e7; font-weight:600; }
-.waa-doc-table td { padding:6px 10px; border:1px solid #e2e4e7; }
-</style>
-
-<script>
-const WAA_PRICING      = <?php echo wp_json_encode($pricing); ?>;
-let currentProvider    = <?php echo wp_json_encode($provider); ?>;
-let currentModel       = <?php echo wp_json_encode($model); ?>;
-
-// ── Provider tab ─────────────────────────────────────────────────────────────
-
-function waaOnProviderChange(p) {
-    currentProvider = p;
-    ['anthropic','gemini','ollama','fake'].forEach(id => {
-        const row = document.getElementById('row-' + id);
-        if (row) {
-            row.style.display = (p === id) ? '' : 'none';
-        }
-    });
-    const refreshButton = document.getElementById('waa-refresh-models');
-    if (refreshButton) {
-        refreshButton.style.display = p === 'ollama' ? '' : 'none';
-    }
-    const sel    = document.getElementById('waa_model');
-    const models = WAA_PRICING[p] ?? {};
-    if (!sel) {
-        return;
-    }
-    sel.replaceChildren();
-    for (const [value, item] of Object.entries(models)) {
-        const option = document.createElement('option');
-        option.value = value;
-        option.textContent = item.label;
-        sel.append(option);
-    }
-    currentModel = sel.value;
-    waaBuildPricingTable();
-    waaUpdateModelInfo();
-}
-
-function waaOnModelChange(m) {
-    currentModel = m;
-    waaBuildPricingTable();
-    waaUpdateModelInfo();
-}
-
-function waaUpdateModelInfo() {
-    const info = WAA_PRICING[currentProvider]?.[currentModel];
-    const el   = document.getElementById('waa-model-info');
-    if (!el) {
-        return;
-    }
-    if (!info) { el.textContent = ''; return; }
-    const ctx  = info.ctx >= 1000000 ? (info.ctx/1000000).toFixed(1)+'M' : (info.ctx/1000)+'K';
-    el.innerHTML = info.free
-        ? `Context: ${ctx} tokens · <span class="waa-free">Free (local)</span>`
-        : `Context: ${ctx} tokens · $${info.in}/M in · $${info.out}/M out`;
-}
-
-async function waaRefreshOllamaModels() {
-    const btn = document.getElementById('waa-refresh-models');
-    btn.textContent = '…'; btn.disabled = true;
-    try {
-        const res  = await fetch(waaData.restUrl + 'ollama-models', { headers: { 'X-WP-Nonce': waaData.nonce } });
-        const data = await res.json();
-        if (data.error) { alert('Ollama error: ' + data.error); return; }
-        const fetched = {};
-        for (const [id, label] of Object.entries(data.models)) {
-            fetched[id] = { label, ctx: 128000, in: 0, out: 0, free: true };
-        }
-        WAA_PRICING.ollama = fetched;
-        const sel = document.getElementById('waa_model');
-        sel.replaceChildren();
-        for (const [value, item] of Object.entries(fetched)) {
-            const option = document.createElement('option');
-            option.value = value;
-            option.textContent = item.label;
-            sel.append(option);
-        }
-        currentModel = sel.value;
-        waaBuildPricingTable(); waaUpdateModelInfo();
-    } catch(e) { alert('Could not reach Ollama: ' + e.message); }
-    finally { btn.textContent = '↺ Refresh'; btn.disabled = false; }
-}
-
-// Test connection
-document.getElementById('waa-test-btn')?.addEventListener('click', async function() {
-    const el = document.getElementById('waa-test-result');
-    el.style.color = '#666'; el.textContent = 'Testing…';
-    // Send current form values so the test uses live selections, not only saved DB values
-    const body = {
-        provider:   document.getElementById('waa_provider')?.value  ?? '',
-        model:      document.getElementById('waa_model')?.value     ?? '',
-        api_key:    document.getElementById('waa_api_key')?.value   ?? '',
-        gemini_key: document.getElementById('waa_gemini_key')?.value ?? '',
-        ollama_url: document.getElementById('waa_ollama_url')?.value ?? '',
-    };
-    try {
-        const res  = await fetch(waaData.restUrl + 'test-connection', {
-            method: 'POST',
-            headers: { 'X-WP-Nonce': waaData.nonce, 'Content-Type': 'application/json' },
-            body: JSON.stringify(body),
-        });
-        const data = await res.json();
-        if (data.success) {
-            el.style.color = 'green';
-            el.textContent = `✅ ${data.provider} · ${data.model} · "${data.reply}"`;
-        } else {
-            el.style.color = '#d63638';
-            el.textContent = '❌ ' + (data.error ?? `HTTP ${res.status}`);
-        }
-    } catch(e) { el.style.color = '#d63638'; el.textContent = '❌ ' + e.message; }
-});
-
-// ── Tools tab ─────────────────────────────────────────────────────────────────
-
-function waaToolToggle(name, enabled) {
-    const row = document.getElementById('tool-row-' + name);
-    if (!row) return;
-    row.classList.toggle('waa-tool-disabled', !enabled);
-    const descCell = row.cells[2];
-    if (descCell) descCell.style.color = enabled ? '#111' : '#999';
-}
-
-function waaToggleAll(enabled) {
-    document.querySelectorAll('#waa-tools-table input[type=checkbox]').forEach(cb => {
-        cb.checked = enabled;
-        waaToolToggle(cb.name.replace('waa_tool_', ''), enabled);
-    });
-}
-
-function waaShowSchema(name, btn) {
-    const row = document.getElementById('schema-row-' + name);
-    const pre = document.getElementById('schema-pre-' + name);
-    if (!row || !pre) return;
-    const isVisible = row.style.display !== 'none';
-    row.style.display = isVisible ? 'none' : '';
-    btn.textContent   = isVisible ? 'JSON ▾' : 'JSON ▴';
-    if (!isVisible && !pre.textContent) {
-        try { pre.textContent = JSON.stringify(JSON.parse(btn.dataset.schema), null, 2); }
-        catch { pre.textContent = btn.dataset.schema; }
-    }
-}
-
-// ── Pricing + Stats (always) ──────────────────────────────────────────────────
-
-function waaBuildPricingTable() {
-    const panel = document.getElementById('waa-pricing-table');
-    if (!panel) {
-        return;
-    }
-    const models = WAA_PRICING[currentProvider] ?? {};
-    const table = document.createElement('table');
-    table.className = 'waa-pricing-table';
-    const header = table.createTHead().insertRow();
-    for (const label of ['Model', 'Input', 'Output', 'Context']) {
-        const th = document.createElement('th');
-        th.textContent = label;
-        header.append(th);
-    }
-    const tbody = table.createTBody();
-    for (const [id, m] of Object.entries(models)) {
-        const row = tbody.insertRow();
-        if (id === currentModel) row.className = 'active';
-        const ctx    = m.ctx >= 1000000 ? (m.ctx/1000000).toFixed(1)+'M' : (m.ctx/1000)+'K';
-        row.insertCell().textContent = m.label;
-        if (m.free) {
-            const freeCell = row.insertCell();
-            freeCell.className = 'waa-free';
-            freeCell.colSpan = 2;
-            freeCell.textContent = 'Free';
-        } else {
-            row.insertCell().textContent = `$${m.in}/M`;
-            row.insertCell().textContent = `$${m.out}/M`;
-        }
-        row.insertCell().textContent = ctx;
-    }
-    panel.replaceChildren(table);
-}
-
-async function waaLoadStats() {
-    const panel = document.getElementById('waa-stats-panel');
-    if (!panel) {
-        return;
-    }
-    try {
-        const res  = await fetch(waaData.restUrl + 'stats?period=30', { headers: { 'X-WP-Nonce': waaData.nonce } });
-        const data = await res.json();
-        const t    = data.totals ?? {};
-        const totalIn  = parseInt(t.total_input  ?? 0);
-        const totalOut = parseInt(t.total_output ?? 0);
-        const fmtT = n => n >= 1000000 ? (n/1000000).toFixed(2)+'M' : n >= 1000 ? (n/1000).toFixed(1)+'K' : String(n||0);
-        const fmtC = c => c === 0 ? 'Free' : c < 0.01 ? `$${c.toFixed(6)}` : `$${c.toFixed(4)}`;
-        const fragment = document.createDocumentFragment();
-        const grid = document.createElement('div');
-        grid.className = 'waa-stat-grid';
-        for (const [value, label] of [
-            [String(t.total_calls || 0), 'Tool calls'],
-            [fmtC(Number(data.total_cost || 0)), 'Est. cost'],
-            [fmtT(totalIn), 'Input tokens'],
-            [fmtT(totalOut), 'Output tokens'],
-        ]) {
-            const card = document.createElement('div');
-            card.className = 'waa-stat-card';
-            const valueNode = document.createElement('div');
-            valueNode.className = 'value';
-            valueNode.textContent = value;
-            const labelNode = document.createElement('div');
-            labelNode.className = 'label';
-            labelNode.textContent = label;
-            card.append(valueNode, labelNode);
-            grid.append(card);
-        }
-        fragment.append(grid);
-        if (data.by_model?.length) {
-            const table = document.createElement('table');
-            table.className = 'waa-pricing-table';
-            table.style.marginTop = '8px';
-            const head = table.createTHead().insertRow();
-            for (const heading of ['Model', 'Calls', 'Tokens', 'Cost']) {
-                const cell = document.createElement('th');
-                cell.textContent = heading;
-                head.append(cell);
-            }
-            const body = table.createTBody();
-            for (const r of data.by_model) {
-                const tok = fmtT(parseInt(r.input_tokens)+parseInt(r.output_tokens));
-                const row = body.insertRow();
-                for (const value of [r.model || r.provider || '', r.calls || 0, tok, fmtC(parseFloat(r.cost_usd || 0))]) {
-                    row.insertCell().textContent = String(value);
-                }
-            }
-            fragment.append(table);
-        }
-        panel.replaceChildren(fragment);
-    } catch {
-        const error = document.createElement('em');
-        error.style.color = '#d63638';
-        error.textContent = 'Could not load stats.';
-        panel.replaceChildren(error);
-    }
-}
-
-// ── Docs tab ──────────────────────────────────────────────────────────────────
-
-const WAA_DOCS = <?php echo wp_json_encode(array_map(fn($d) => ['label' => $d['label'], 'content' => $d['content']], $kb_docs)); ?>;
-
-function waaShowDoc(index) {
-    document.querySelectorAll('.waa-doc-link').forEach((b, i) =>
-        b.classList.toggle('waa-doc-active', i === index)
-    );
-    const doc = WAA_DOCS[index];
-    const panel = document.getElementById('waa-docs-content');
-    if (!doc || !panel) return;
-    panel.innerHTML = waaMarkdown(doc.content);
-}
-
-// Minimal Markdown → HTML renderer
-function waaMarkdown(md) {
-    // Escape HTML first
-    const esc = s => s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
-    const lines = md.split('\n');
-    let html = '', inCode = false, codeLines = [], codeLang = '', inTable = false, tableRows = [];
-
-    const flushTable = () => {
-        if (!tableRows.length) return;
-        let t = '<table class="waa-doc-table">';
-        tableRows.forEach((row, i) => {
-            const cells = row.split('|').filter((_, ci, a) => ci > 0 && ci < a.length - 1);
-            t += '<tr>' + cells.map(c => i === 0 ? `<th>${inlineFormat(c.trim())}</th>` : `<td>${inlineFormat(c.trim())}</td>`).join('') + '</tr>';
-        });
-        html += t + '</table>';
-        tableRows = []; inTable = false;
-    };
-
-    const inlineFormat = s => s
-        .replace(/`([^`]+)`/g, '<code>$1</code>')
-        .replace(/\*\*([^*]+)\*\*/g, '<strong>$1</strong>')
-        .replace(/\*([^*]+)\*/g, '<em>$1</em>')
-        .replace(/\[([^\]]+)\]\(([^)]+)\)/g, '<a href="$2" target="_blank" rel="noopener">$1</a>');
-
-    for (let i = 0; i < lines.length; i++) {
-        const line = lines[i];
-
-        // Code fence
-        if (line.startsWith('```')) {
-            if (!inCode) { inCode = true; codeLang = line.slice(3).trim(); codeLines = []; }
-            else {
-                html += `<pre class="waa-doc-code"><code>${esc(codeLines.join('\n'))}</code></pre>`;
-                inCode = false; codeLines = []; codeLang = '';
-            }
-            continue;
-        }
-        if (inCode) { codeLines.push(line); continue; }
-
-        // Table rows
-        if (line.startsWith('|')) {
-            if (!inTable) inTable = true;
-            if (!/^\|[-| ]+\|$/.test(line)) tableRows.push(line);
-            continue;
-        } else if (inTable) { flushTable(); }
-
-        // Headings
-        if (/^#{1,6} /.test(line)) {
-            const lvl = line.match(/^(#+)/)[1].length;
-            html += `<h${lvl} class="waa-doc-h">${inlineFormat(esc(line.slice(lvl + 1)))}</h${lvl}>`;
-            continue;
-        }
-        // HR
-        if (/^---+$/.test(line.trim())) { html += '<hr style="border:none;border-top:1px solid #e2e4e7;margin:16px 0">'; continue; }
-        // List
-        if (/^[-*] /.test(line)) { html += `<li>${inlineFormat(esc(line.slice(2)))}</li>`; continue; }
-        if (/^\d+\. /.test(line)) { html += `<li>${inlineFormat(esc(line.replace(/^\d+\. /, '')))}</li>`; continue; }
-        // Blank
-        if (line.trim() === '') { html += '<br>'; continue; }
-        // Paragraph
-        html += `<p class="waa-doc-p">${inlineFormat(esc(line))}</p>`;
-    }
-    if (inTable) flushTable();
-    return html;
-}
-
-if (WAA_DOCS.length && document.getElementById('waa-docs-content')) waaShowDoc(0);
-
-// Init
-waaBuildPricingTable();
-waaUpdateModelInfo();
-waaLoadStats();
-</script>
