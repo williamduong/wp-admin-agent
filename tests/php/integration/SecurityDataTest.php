@@ -107,7 +107,7 @@ class SecurityDataTest extends WP_UnitTestCase {
 
         $registered = wp_scripts()->registered['wradmin-admin-agent'] ?? null;
         $this->assertInstanceOf(_WP_Dependency::class, $registered);
-        $this->assertSame([], $registered->deps);
+        $this->assertSame(['wp-element'], $registered->deps);
 
         $bundle = file_get_contents(WRADMIN_PLUGIN_DIR . 'assets/js/admin-agent.js');
         $this->assertIsString($bundle);
@@ -140,6 +140,7 @@ class SecurityDataTest extends WP_UnitTestCase {
         delete_option('wradmin_api_key_enc');
 
         try {
+            $this->assertSame('42', (string) $wpdb->get_var($wpdb->prepare('SELECT id FROM %i', $old)));
             $method = new ReflectionMethod(WRADMIN_Plugin::class, 'migrate_legacy_data');
             $this->assertTrue($method->invoke(null, $prefix));
             $this->assertSame('existing-secret', (new WRADMIN_Settings())->get_api_key());

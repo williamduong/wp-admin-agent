@@ -121,7 +121,7 @@ class WRADMIN_Plugin {
         foreach (['logs', 'conversations'] as $suffix) {
             $old = $prefix . 'waa_' . $suffix;
             $new = $prefix . 'wradmin_' . $suffix;
-            if ($wpdb->get_var($wpdb->prepare('SHOW TABLES LIKE %s', $old)) !== $old) {
+            if ($wpdb->get_var($wpdb->prepare('SHOW TABLES LIKE %s', $wpdb->esc_like($old))) !== $old) {
                 continue;
             }
             $old_count = (int) $wpdb->get_var($wpdb->prepare('SELECT COUNT(*) FROM %i', $old));
