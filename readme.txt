@@ -4,7 +4,7 @@ Tags: ai assistant, admin, automation, woocommerce, ollama
 Requires at least: 6.5
 Tested up to: 7.1
 Requires PHP: 8.2
-Stable tag: 0.4.3
+Stable tag: 0.4.4
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -25,6 +25,10 @@ The Free edition focuses on safe workflows:
 * Encrypt provider credentials using WordPress security keys.
 
 The plugin requires a WordPress administrator account with the `manage_options` capability. It does not expose the assistant to public site visitors.
+
+= Source code and build =
+
+The human-readable source for the compiled admin interface and the packaging scripts is maintained at https://github.com/williamduong/wp-admin-agent . To rebuild the JavaScript, run `npm ci` and `npm run build`; the packaging steps are documented in the repository's development guide.
 
 = External services =
 
@@ -63,11 +67,10 @@ RSS publishers
 * Purpose: Fetch a selected public RSS feed only when an administrator requests current news or feed content.
 * Data sent: A normal HTTP request from the WordPress server. The publisher receives standard request metadata such as IP address and user agent.
 * The plugin identifies the selected feed before it is requested. Built-in presets may contact these publishers:
-* Ars Technica: Terms https://arstechnica.com/uncategorized/2009/01/user-agreement/ — Privacy https://arstechnica.com/uncategorized/2009/01/privacy-policy/
+* Ars Technica (Condé Nast): Terms https://www.condenast.com/user-agreement — Privacy https://www.condenast.com/privacy-policy
 * TechCrunch: Terms https://techcrunch.com/terms-of-service/ — Privacy https://techcrunch.com/privacy-policy/
 * The Verge (Vox Media): Terms https://www.voxmedia.com/legal/terms-of-use — Privacy https://www.voxmedia.com/legal/privacy-notice
-* WIRED: Terms https://www.wired.com/about/user-agreement/ — Privacy https://www.wired.com/about/privacy-policy/
-* MIT Technology Review: Terms https://www.technologyreview.com/terms-of-service/ — Privacy https://www.technologyreview.com/privacy-policy/
+* WIRED (Condé Nast): Terms https://www.condenast.com/user-agreement — Privacy https://www.condenast.com/privacy-policy
 * ScienceDaily: Terms https://www.sciencedaily.com/terms.htm — Privacy https://www.sciencedaily.com/privacy.htm
 * Phys.org (Science X): Terms https://sciencex.com/help/terms/ — Privacy https://sciencex.com/help/privacy/
 * Nature: Terms https://www.nature.com/info/terms-and-conditions — Privacy https://www.nature.com/info/privacy
@@ -124,6 +127,12 @@ The Free edition does not send product telemetry by default. Calls required to f
 5. Built-in documentation.
 
 == Changelog ==
+
+= 0.4.4 =
+
+* Replaced short plugin prefixes with distinct names and migrated existing settings, conversations, and logs.
+* Removed MIT Technology Review feed presets because the documented privacy URL is unavailable.
+* Sites using the separately distributed Pro add-on should update it to 0.1.3 for compatibility with the renamed Free API.
 
 = 0.4.3 =
 

@@ -11,7 +11,7 @@ defined('ABSPATH') || exit;
  *   2. Bot calls search_icon({ query: "robot" })
  *   3. Bot picks a result URL, calls set_site_icon({ image_url: "..." })
  */
-class WAA_Tool_Search_Icon extends WAA_Tool_Base {
+class WRADMIN_Tool_Search_Icon extends WRADMIN_Tool_Base {
     private const API = 'https://api.iconify.design';
 
     public function get_name(): string { return 'search_icon'; }
@@ -49,7 +49,7 @@ class WAA_Tool_Search_Icon extends WAA_Tool_Base {
 
         $response = wp_remote_get(
             self::API . '/search?' . http_build_query(['query' => $query, 'limit' => $limit]),
-            ['timeout' => 10, 'user-agent' => 'WordPress WAA-Bot/1.0']
+            ['timeout' => 10, 'user-agent' => 'WordPress WRADMIN-Bot/1.0']
         );
 
         if (is_wp_error($response)) {

@@ -2,7 +2,7 @@
 
 defined('ABSPATH') || exit;
 
-class WAA_Encryptor {
+class WRADMIN_Encryptor {
     private const LEGACY_CIPHER = 'AES-256-CBC';
     private const CIPHER = 'aes-256-gcm';
     private const PREFIX = 'v2:';

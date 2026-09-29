@@ -26,7 +26,7 @@ describe('useChat', () => {
     });
 
     it('hydrates from localStorage and clears browser-owned session state', async () => {
-        localStorage.setItem('waa_chat_v1', JSON.stringify({
+        localStorage.setItem('wradmin_chat_v1', JSON.stringify({
             messages: [{ role: 'user', content: 'Saved message', id: 'saved-1' }],
             history: [{ role: 'user', content: 'Saved API history' }],
             usage: { input_tokens: 3, output_tokens: 4, cost_usd: 0.12, elapsed_ms: 50 },
@@ -44,7 +44,7 @@ describe('useChat', () => {
 
         expect(result.current.messages).toEqual([]);
         expect(result.current.sessionUsage.input_tokens).toBe(0);
-        expect(localStorage.getItem('waa_chat_v1')).toBeNull();
+        expect(localStorage.getItem('wradmin_chat_v1')).toBeNull();
     });
 
     it('starts the predefined workflow from a slash command without calling the provider', async () => {
@@ -62,7 +62,7 @@ describe('useChat', () => {
             currentStep: 'country',
         });
 
-        const persisted = JSON.parse(localStorage.getItem('waa_chat_v1'));
+        const persisted = JSON.parse(localStorage.getItem('wradmin_chat_v1'));
         expect(persisted.activeWorkflow.workflowId).toBe('woocommerce_first_time_setup');
     });
 
@@ -139,7 +139,7 @@ describe('useChat', () => {
             },
         ]);
 
-        const persisted = JSON.parse(localStorage.getItem('waa_chat_v1'));
+        const persisted = JSON.parse(localStorage.getItem('wradmin_chat_v1'));
         expect(persisted.conversationId).toBe(42);
         expect(persisted.history).toEqual([
             { role: 'user', content: 'List installed plugins' },
@@ -163,7 +163,7 @@ describe('useChat', () => {
     });
 
     it('reuses an existing conversation id for subsequent live chat requests', async () => {
-        localStorage.setItem('waa_chat_v1', JSON.stringify({
+        localStorage.setItem('wradmin_chat_v1', JSON.stringify({
             messages: [{ role: 'assistant', content: 'Existing message', id: 'saved-1' }],
             history: [{ role: 'assistant', content: 'Existing API history', tool_calls: [] }],
             usage: { input_tokens: 5, output_tokens: 6, cost_usd: 0.02, elapsed_ms: 10 },
@@ -636,7 +636,7 @@ describe('useChat', () => {
 
         expect(result.current.activeWorkflow.status).toBe('collecting');
 
-        const persistedBeforeApply = JSON.parse(localStorage.getItem('waa_chat_v1'));
+        const persistedBeforeApply = JSON.parse(localStorage.getItem('wradmin_chat_v1'));
         expect(persistedBeforeApply.activeWorkflow.answers.country).toBe('VN');
         expect(persistedBeforeApply.activeWorkflow.answers.sampleProductName).toBe('Starter Hoodie');
 

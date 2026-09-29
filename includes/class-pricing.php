@@ -6,7 +6,7 @@ defined('ABSPATH') || exit;
  * Centralized pricing + model metadata.
  * Prices in USD per 1,000,000 tokens.
  */
-class WAA_Pricing {
+class WRADMIN_Pricing {
     private const DATA = [
         'anthropic' => [
             // Prices: USD per 1M tokens. Context: 200K for Haiku, 1M for Sonnet/Opus.

@@ -2,8 +2,8 @@
 
 defined('ABSPATH') || exit;
 
-function waa_render_dashboard_widget(): void {
-    $logs = WAA_Audit_Log::get_recent(5);
+function wradmin_render_dashboard_widget(): void {
+    $logs = WRADMIN_Audit_Log::get_recent(5);
 
     if (empty($logs)) {
         echo '<p>' . esc_html__('No agent actions yet. Click the chat icon to get started.', 'william-research-admin-agent') . '</p>';

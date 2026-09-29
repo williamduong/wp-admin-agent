@@ -2,7 +2,7 @@
 
 defined('ABSPATH') || exit;
 
-class WAA_Tool_Navigate extends WAA_Tool_Base {
+class WRADMIN_Tool_Navigate extends WRADMIN_Tool_Base {
     public function get_name(): string { return 'navigate'; }
 
     public function get_description(): string {

@@ -19,7 +19,7 @@
     },
     {
       "step": "runPHP",
-      "code": "<?php require '/wordpress/wp-load.php'; wp_mkdir_p(WPMU_PLUGIN_DIR); copy('/wordpress/wp-content/plugins/william-research-admin-agent/tests/e2e/fixtures/waa-e2e-helper.php', WPMU_PLUGIN_DIR . '/waa-e2e-helper.php'); update_option('waa_provider', 'fake'); update_option('waa_model', 'runtime-v1'); update_option('waa_data_retention_days', 30);"
+      "code": "<?php require '/wordpress/wp-load.php'; wp_mkdir_p(WPMU_PLUGIN_DIR); copy('/wordpress/wp-content/plugins/william-research-admin-agent/tests/e2e/fixtures/wradmin-e2e-helper.php', WPMU_PLUGIN_DIR . '/wradmin-e2e-helper.php'); update_option('wradmin_provider', 'fake'); update_option('wradmin_model', 'runtime-v1'); update_option('wradmin_data_retention_days', 30);"
     }
   ]
 }

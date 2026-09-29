@@ -1,4 +1,4 @@
-const { restUrl, nonce } = window.waaData ?? {};
+const { restUrl, nonce } = window.wradminData ?? {};
 
 async function readErrorMessage(response) {
     const contentType = response.headers.get('content-type') ?? '';

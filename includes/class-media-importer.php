@@ -6,11 +6,11 @@ defined('ABSPATH') || exit;
  * Imports a remote image into the WordPress Media Library.
  *
  * Usage:
- *   $id = (new WAA_Media_Importer(new WAA_Resource_Fetcher()))->import_from_url($url, 'Site Icon');
+ *   $id = (new WRADMIN_Media_Importer(new WRADMIN_Resource_Fetcher()))->import_from_url($url, 'Site Icon');
  */
-class WAA_Media_Importer {
+class WRADMIN_Media_Importer {
     public function __construct(
-        private readonly WAA_Resource_Fetcher $fetcher
+        private readonly WRADMIN_Resource_Fetcher $fetcher
     ) {}
 
     /**

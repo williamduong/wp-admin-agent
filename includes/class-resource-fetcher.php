@@ -8,7 +8,7 @@ defined('ABSPATH') || exit;
  * Returns metadata + a local temp path. Caller is responsible for
  * moving the file and cleaning up via wp_delete_file($result['path']).
  */
-class WAA_Resource_Fetcher {
+class WRADMIN_Resource_Fetcher {
     private const MAX_BYTES = 5 * 1024 * 1024; // 5 MB
 
     private const ALLOWED_MIME = [
@@ -22,7 +22,7 @@ class WAA_Resource_Fetcher {
      * @return array{ path: string, mime: string, filename: string, size: int }
      */
     public function fetch_image(string $url): array {
-        $validated_url = WAA_Network_Guard::public_url($url);
+        $validated_url = WRADMIN_Network_Guard::public_url($url);
         if (is_wp_error($validated_url)) {
             throw new RuntimeException(esc_html($validated_url->get_error_message()));
         }
@@ -31,7 +31,7 @@ class WAA_Resource_Fetcher {
         // HEAD first — check content-type and size without downloading
         $head = wp_safe_remote_head($url, [
             'timeout'    => 10,
-            'user-agent' => 'WordPress/' . get_bloginfo('version') . '; WAA-Bot',
+            'user-agent' => 'WordPress/' . get_bloginfo('version') . '; WRADMIN-Bot',
             'redirection' => 3,
         ]);
 

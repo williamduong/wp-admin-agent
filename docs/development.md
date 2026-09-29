@@ -7,7 +7,7 @@
 | `wp-admin-agent.php` | Plugin bootstrap and constants |
 | `includes/` | Backend orchestration, REST, providers, storage, and shared services |
 | `tools/` | WordPress/WooCommerce tool implementations |
-| `src/` | React/TypeScript frontend source |
+| `src/` | React/JSX frontend source |
 | `assets/` | Compiled frontend loaded by WordPress |
 | `tests/` | JavaScript and PHP test suites |
 | `knowledge-base/` | Product and implementation notes |
@@ -29,6 +29,8 @@ Build production assets:
 ```bash
 npm run build
 ```
+
+The build uses WordPress's `wp-element` script for React and ReactDOM. It writes the interface to `assets/js/admin-agent.js` and extracts its styles to `assets/css/admin-agent.css`; both files must be present in the release package.
 
 Run static checks and JavaScript tests:
 

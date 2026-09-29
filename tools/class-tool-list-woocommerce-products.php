@@ -2,7 +2,7 @@
 
 defined('ABSPATH') || exit;
 
-class WAA_Tool_List_WooCommerce_Products extends WAA_Tool_WooCommerce_Base {
+class WRADMIN_Tool_List_WooCommerce_Products extends WRADMIN_Tool_WooCommerce_Base {
     public function get_name(): string { return 'list_woocommerce_products'; }
 
     public function get_description(): string {

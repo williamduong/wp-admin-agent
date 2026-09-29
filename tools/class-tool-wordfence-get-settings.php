@@ -2,7 +2,7 @@
 
 defined('ABSPATH') || exit;
 
-class WAA_Tool_Wordfence_Get_Settings extends WAA_Tool_Base {
+class WRADMIN_Tool_Wordfence_Get_Settings extends WRADMIN_Tool_Base {
     private const SETTING_MAP = [
         'firewall_enabled'         => ['key' => 'firewallEnabled',                'type' => 'bool',   'default' => false],
         'require_2fa_admins'       => ['key' => 'loginSec_requireAdminTwoFactor', 'type' => 'bool',   'default' => false],

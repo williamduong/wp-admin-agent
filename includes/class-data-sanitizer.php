@@ -3,7 +3,7 @@
 defined('ABSPATH') || exit;
 
 /** Minimizes operational records before they are persisted. */
-class WAA_Data_Sanitizer {
+class WRADMIN_Data_Sanitizer {
     private const REDACTED = '[redacted]';
 
     public static function sanitize(mixed $value, int $string_limit = 2000, string $key = ''): mixed {

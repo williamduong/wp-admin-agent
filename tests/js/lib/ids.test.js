@@ -30,6 +30,6 @@ describe('makeClientId', () => {
     it('falls back to a timestamp-based id when crypto is unavailable', () => {
         vi.stubGlobal('crypto', undefined);
 
-        expect(makeClientId()).toMatch(/^waa-/);
+        expect(makeClientId()).toMatch(/^wradmin-/);
     });
 });

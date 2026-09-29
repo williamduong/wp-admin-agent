@@ -2,7 +2,7 @@
 
 defined('ABSPATH') || exit;
 
-class WAA_Tool_Wordfence_Get_Scan_Results extends WAA_Tool_Base {
+class WRADMIN_Tool_Wordfence_Get_Scan_Results extends WRADMIN_Tool_Base {
     public function get_name(): string { return 'wordfence_get_scan_results'; }
 
     public function get_description(): string {

@@ -15,7 +15,7 @@ defined('ABSPATH') || exit;
  *   ['role' => 'assistant', 'content' => string, 'tool_calls' => [...]]
  *   ['role' => 'tool',      'tool_call_id' => string, 'tool_name' => string, 'result' => array]
  */
-abstract class WAA_Provider_Base {
+abstract class WRADMIN_Provider_Base {
     /**
      * Send one turn to the AI and return a normalized response.
      *

@@ -2,7 +2,7 @@
 
 defined('ABSPATH') || exit;
 
-class WAA_Agent {
+class WRADMIN_Agent {
     private const MAX_HISTORY_MESSAGES = 24;
     private const CONFIRMATION_TOOLS = [
         'install_plugin',
@@ -44,12 +44,12 @@ class WAA_Agent {
     ];
 
     public function __construct(
-        private readonly WAA_Provider_Base $provider,
-        private readonly WAA_Tool_Registry $registry,
-        private readonly WAA_Audit_Log     $log
+        private readonly WRADMIN_Provider_Base $provider,
+        private readonly WRADMIN_Tool_Registry $registry,
+        private readonly WRADMIN_Audit_Log     $log
     ) {}
 
-    public static function build_system_prompt(WAA_Provider_Base $provider, WAA_Tool_Registry $registry, WAA_Settings $settings): string {
+    public static function build_system_prompt(WRADMIN_Provider_Base $provider, WRADMIN_Tool_Registry $registry, WRADMIN_Settings $settings): string {
         $site = [
             'url'      => get_site_url(),
             'title'    => get_bloginfo('name'),
@@ -126,7 +126,7 @@ class WAA_Agent {
 
         $messages      = $this->build_runtime_messages($user_message, $history);
         if (($workflow['kind'] ?? '') === 'wizard') {
-            $workflow_context = WAA_Wizard_Registry::summarize_active_workflow($workflow);
+            $workflow_context = WRADMIN_Wizard_Registry::summarize_active_workflow($workflow);
             if ($workflow_context !== '') {
                 $messages[] = [
                     'role' => 'user',
@@ -139,7 +139,7 @@ class WAA_Agent {
         $total_out     = 0;
         $start_ms      = (int) (microtime(true) * 1000);
 
-        while ($iteration++ < WAA_MAX_TOOL_ITERATIONS) {
+        while ($iteration++ < WRADMIN_MAX_TOOL_ITERATIONS) {
             $llm_started_ms = (int) (microtime(true) * 1000);
             $response = $this->provider->complete(
                 $this->system_prompt(),
@@ -170,7 +170,7 @@ class WAA_Agent {
                 'input_tokens'  => $total_in,
                 'output_tokens' => $total_out,
                 'elapsed_ms'    => (int) (microtime(true) * 1000) - $start_ms,
-                'cost_usd'      => WAA_Pricing::calculate(
+                'cost_usd'      => WRADMIN_Pricing::calculate(
                     $this->provider->get_id(),
                     $this->get_model(),
                     $total_in,
@@ -196,7 +196,7 @@ class WAA_Agent {
                 $confirmation = $this->classify_action($tc['name'] ?? '', $tc['input'] ?? []);
 
                 if ($confirmation['requires_confirmation'] ?? false) {
-                    $action_id = WAA_Pending_Action::create(
+                    $action_id = WRADMIN_Pending_Action::create(
                         (string) $tc['name'],
                         (string) $tc['id'],
                         is_array($tc['input'] ?? null) ? $tc['input'] : [],
@@ -268,7 +268,7 @@ class WAA_Agent {
             }
         }
 
-        if ($iteration > WAA_MAX_TOOL_ITERATIONS) {
+        if ($iteration > WRADMIN_MAX_TOOL_ITERATIONS) {
             yield ['type' => 'text_delta', 'content' => "\n\n_(Maximum tool iterations reached.)_"];
         }
     }
@@ -498,7 +498,7 @@ class WAA_Agent {
     }
 
     private function run_confirmed_action(array $confirmation, int $conversation_id): Generator {
-        $pending = WAA_Pending_Action::consume(
+        $pending = WRADMIN_Pending_Action::consume(
             sanitize_text_field((string) ($confirmation['action_id'] ?? '')),
             $conversation_id
         );
@@ -552,7 +552,7 @@ class WAA_Agent {
 
     private function build_active_workflow_message(array $workflow): string {
         $wizard_id = sanitize_key((string) ($workflow['workflowId'] ?? 'workflow'));
-        $definition = WAA_Wizard_Registry::get($wizard_id);
+        $definition = WRADMIN_Wizard_Registry::get($wizard_id);
         $title = $definition['title'] ?? 'guided workflow';
         $step = sanitize_key((string) ($workflow['currentStep'] ?? ''));
 
@@ -1084,10 +1084,10 @@ class WAA_Agent {
 
     private function get_model(): string {
         // Provider stores model internally; expose via reflection or settings lookup
-        return (new WAA_Settings())->get_model();
+        return (new WRADMIN_Settings())->get_model();
     }
 
     private function system_prompt(): string {
-        return self::build_system_prompt($this->provider, $this->registry, new WAA_Settings());
+        return self::build_system_prompt($this->provider, $this->registry, new WRADMIN_Settings());
     }
 }

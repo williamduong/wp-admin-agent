@@ -2,7 +2,7 @@
 
 defined('ABSPATH') || exit;
 
-class WAA_Tool_Get_Settings extends WAA_Tool_Base {
+class WRADMIN_Tool_Get_Settings extends WRADMIN_Tool_Base {
     private const KEYS = [
         'blogname', 'blogdescription', 'siteurl', 'admin_email',
         'timezone_string', 'date_format', 'time_format', 'posts_per_page',

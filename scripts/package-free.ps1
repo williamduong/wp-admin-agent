@@ -62,6 +62,11 @@ foreach ($asset in @('admin\settings-page.js', 'admin\settings-page.css')) {
         throw "Missing enqueued Settings screen asset: $asset"
     }
 }
+foreach ($asset in @('assets\js\admin-agent.js', 'assets\css\admin-agent.css')) {
+    if (-not (Test-Path -LiteralPath (Join-Path $sourceRoot $asset))) {
+        throw "Missing compiled admin interface asset: $asset. Run npm run build first."
+    }
+}
 
 $outputRoot = [System.IO.Path]::GetFullPath($OutputDirectory)
 New-Item -ItemType Directory -Path $outputRoot -Force | Out-Null

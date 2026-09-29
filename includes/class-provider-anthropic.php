@@ -2,7 +2,7 @@
 
 defined('ABSPATH') || exit;
 
-class WAA_Provider_Anthropic extends WAA_Provider_Base {
+class WRADMIN_Provider_Anthropic extends WRADMIN_Provider_Base {
     private const BASE_URL = 'https://api.anthropic.com/v1/messages';
     private const API_VER  = '2023-06-01';
 

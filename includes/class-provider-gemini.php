@@ -2,7 +2,7 @@
 
 defined('ABSPATH') || exit;
 
-class WAA_Provider_Gemini extends WAA_Provider_Base {
+class WRADMIN_Provider_Gemini extends WRADMIN_Provider_Base {
     private const BASE_URL = 'https://generativelanguage.googleapis.com/v1beta/models/';
 
     public function __construct(

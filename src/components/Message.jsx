@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import styles from '../styles/messages.module.css';
 
-const debugMode = window.waaData?.debugMode ?? 'off';
+const debugMode = window.wradminData?.debugMode ?? 'off';
 
 function formatElapsed(ms) {
     if (!ms || ms <= 0) return null;

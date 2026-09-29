@@ -5,7 +5,7 @@ defined('ABSPATH') || exit;
 /**
  * MCP (Model Context Protocol) server — JSON-RPC 2.0 over HTTP.
  *
- * Exposes all registered WAA tools to any MCP-compatible AI client
+ * Exposes all registered WRADMIN tools to any MCP-compatible AI client
  * (Claude Desktop, Claude Code, IDE extensions, custom bridges).
  *
  * Endpoint: POST /wp-json/wp-admin-agent/v1/mcp
@@ -17,7 +17,7 @@ defined('ABSPATH') || exit;
  *
  * MCP spec: https://modelcontextprotocol.io/specification
  */
-class WAA_MCP_Server {
+class WRADMIN_MCP_Server {
     private const PROTOCOL_VERSION = '2024-11-05';
     private const SERVER_NAME      = 'wp-admin-agent';
     private const SERVER_VERSION   = '1.0.0';
@@ -37,8 +37,8 @@ class WAA_MCP_Server {
     ];
 
     public function __construct(
-        private readonly WAA_Tool_Registry $registry,
-        private readonly ?WAA_Audit_Log $audit_log = null
+        private readonly WRADMIN_Tool_Registry $registry,
+        private readonly ?WRADMIN_Audit_Log $audit_log = null
     ) {}
 
     public function handle(WP_REST_Request $request): WP_REST_Response {
@@ -111,7 +111,7 @@ class WAA_MCP_Server {
 
         try {
             $result = $this->registry->execute($name, $arguments);
-            ($this->audit_log ?? new WAA_Audit_Log())->write($name, $arguments, $result, [
+            ($this->audit_log ?? new WRADMIN_Audit_Log())->write($name, $arguments, $result, [
                 'provider' => 'mcp',
                 'model' => 'external-client',
                 'input_tokens' => 0,

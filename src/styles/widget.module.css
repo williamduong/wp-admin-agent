@@ -1,4 +1,4 @@
-/* All scoped inside #waa-root to avoid wp-admin conflicts */
+/* All scoped inside #wradmin-root to avoid wp-admin conflicts */
 
 .toggleBtn {
     position: fixed;

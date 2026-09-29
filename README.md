@@ -66,7 +66,7 @@ flowchart LR
     FREE --> WP[WordPress APIs]
 ```
 
-The Free plugin owns the provider, orchestration, storage, UI, and extension hook. Pro registers additional tool instances through `waa_admin_agent_tool_instances`; premium implementation code is not required by the Free package.
+The Free plugin owns the provider, orchestration, storage, UI, and extension hook. Pro registers additional tool instances through `wradmin_admin_agent_tool_instances`; premium implementation code is not required by the Free package.
 
 ## Development
 

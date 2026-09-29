@@ -14,7 +14,7 @@ if (!defined('WP_TESTS_PHPUNIT_POLYFILLS_PATH')) {
 
 require_once $_tests_dir . '/includes/functions.php';
 
-function waa_tests_load_plugin(): void {
+function wradmin_tests_load_plugin(): void {
     require dirname(__DIR__, 2) . '/wp-admin-agent.php';
     $pro_plugin = dirname(__DIR__, 2) . '/pro/wp-admin-agent-pro/wp-admin-agent-pro.php';
     if (file_exists($pro_plugin)) {
@@ -22,10 +22,10 @@ function waa_tests_load_plugin(): void {
     }
 }
 
-tests_add_filter('muplugins_loaded', 'waa_tests_load_plugin');
+tests_add_filter('muplugins_loaded', 'wradmin_tests_load_plugin');
 
 require $_tests_dir . '/includes/bootstrap.php';
 
 // Activation hooks are not invoked automatically by the WordPress PHPUnit
 // bootstrap. Install the plugin tables explicitly before integration tests.
-WAA_Plugin::activate(false);
+WRADMIN_Plugin::activate(false);

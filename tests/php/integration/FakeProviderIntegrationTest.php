@@ -7,24 +7,24 @@ class FakeProviderIntegrationTest extends WP_UnitTestCase {
     }
 
     public function tearDown(): void {
-        delete_option('waa_provider');
-        delete_option('waa_model');
+        delete_option('wradmin_provider');
+        delete_option('wradmin_model');
         wp_set_current_user(0);
         parent::tearDown();
     }
 
     public function test_provider_factory_builds_fake_provider_from_settings(): void {
-        update_option('waa_provider', 'fake');
-        update_option('waa_model', 'runtime-v1');
+        update_option('wradmin_provider', 'fake');
+        update_option('wradmin_model', 'runtime-v1');
 
-        $provider = WAA_Provider_Factory::make(new WAA_Settings());
+        $provider = WRADMIN_Provider_Factory::make(new WRADMIN_Settings());
 
-        $this->assertInstanceOf(WAA_Provider_Fake::class, $provider);
+        $this->assertInstanceOf(WRADMIN_Provider_Fake::class, $provider);
         $this->assertSame('fake', $provider->get_id());
     }
 
     public function test_fake_provider_returns_deterministic_response_for_known_prompt(): void {
-        $provider = new WAA_Provider_Fake('runtime-v1');
+        $provider = new WRADMIN_Provider_Fake('runtime-v1');
 
         $response = $provider->complete(
             'System prompt.',
@@ -38,7 +38,7 @@ class FakeProviderIntegrationTest extends WP_UnitTestCase {
     }
 
     public function test_fake_provider_does_not_reuse_a_tool_result_from_an_older_turn(): void {
-        $provider = new WAA_Provider_Fake('runtime-v1');
+        $provider = new WRADMIN_Provider_Fake('runtime-v1');
 
         $response = $provider->complete(
             'System prompt.',

@@ -2,7 +2,7 @@
 
 defined('ABSPATH') || exit;
 
-abstract class WAA_Tool_Base {
+abstract class WRADMIN_Tool_Base {
     abstract public function get_name(): string;
     abstract public function get_description(): string;
     abstract public function get_input_schema(): array;
@@ -31,7 +31,7 @@ abstract class WAA_Tool_Base {
             default => 'manage_options',
         };
 
-        return (string) apply_filters('waa_tool_required_capability', $capability, $name, $this);
+        return (string) apply_filters('wradmin_tool_required_capability', $capability, $name, $this);
     }
 
     public function validate_input(array $input): array|WP_Error {

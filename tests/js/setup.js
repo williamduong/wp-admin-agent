@@ -24,7 +24,7 @@ Object.defineProperty(globalThis, 'localStorage', {
 });
 
 // Mock WordPress localized data
-global.waaData = {
+global.wradminData = {
     nonce:       'test-nonce-123',
     restUrl:     'http://localhost/wp-json/wp-admin-agent/v1/',
     currentUser: { id: 1, name: 'Admin' },

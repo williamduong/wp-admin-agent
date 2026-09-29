@@ -1,12 +1,12 @@
 <?php
 
 class RestApiSafetyTest extends WP_UnitTestCase {
-    private WAA_REST_API $api;
+    private WRADMIN_REST_API $api;
 
     public function setUp(): void {
         parent::setUp();
 
-        $this->api = new WAA_REST_API();
+        $this->api = new WRADMIN_REST_API();
         do_action('rest_api_init');
     }
 
@@ -29,7 +29,7 @@ class RestApiSafetyTest extends WP_UnitTestCase {
     public function test_settings_route_ignores_chat_rate_limit_budget(): void {
         $user_id = self::factory()->user->create(['role' => 'administrator']);
         wp_set_current_user($user_id);
-        set_transient("waa_rate_{$user_id}", WAA_RATE_LIMIT, MINUTE_IN_SECONDS);
+        set_transient("wradmin_rate_{$user_id}", WRADMIN_RATE_LIMIT, MINUTE_IN_SECONDS);
 
         $request = new WP_REST_Request('GET', '/wp-admin-agent/v1/settings');
         $response = rest_get_server()->dispatch($request);
@@ -40,7 +40,7 @@ class RestApiSafetyTest extends WP_UnitTestCase {
     public function test_chat_route_returns_rate_limited_when_threshold_is_hit(): void {
         $user_id = self::factory()->user->create(['role' => 'administrator']);
         wp_set_current_user($user_id);
-        set_transient("waa_rate_{$user_id}", WAA_RATE_LIMIT, MINUTE_IN_SECONDS);
+        set_transient("wradmin_rate_{$user_id}", WRADMIN_RATE_LIMIT, MINUTE_IN_SECONDS);
 
         $request = new WP_REST_Request('POST', '/wp-admin-agent/v1/chat');
         $request->set_body(wp_json_encode([
@@ -56,8 +56,8 @@ class RestApiSafetyTest extends WP_UnitTestCase {
     public function test_chat_route_returns_json_error_when_provider_is_not_configured(): void {
         $user_id = self::factory()->user->create(['role' => 'administrator']);
         wp_set_current_user($user_id);
-        update_option('waa_provider', 'anthropic');
-        delete_option('waa_api_key_enc');
+        update_option('wradmin_provider', 'anthropic');
+        delete_option('wradmin_api_key_enc');
 
         $request = new WP_REST_Request('POST', '/wp-admin-agent/v1/chat');
         $request->set_body(wp_json_encode([
@@ -87,7 +87,7 @@ class RestApiSafetyTest extends WP_UnitTestCase {
             ['role' => 'user', 'content' => 'inline'],
         ];
 
-        $wpdb->insert(WAA_TABLE_CONVERSATIONS, [
+        $wpdb->insert(WRADMIN_TABLE_CONVERSATIONS, [
             'user_id' => $user_id,
             'title' => 'Fixture conversation',
             'messages' => wp_json_encode($persisted_history),
@@ -112,7 +112,7 @@ class RestApiSafetyTest extends WP_UnitTestCase {
             ['role' => 'assistant', 'content' => 'reply'],
         ];
 
-        $wpdb->insert(WAA_TABLE_CONVERSATIONS, [
+        $wpdb->insert(WRADMIN_TABLE_CONVERSATIONS, [
             'user_id' => $user_id,
             'title' => 'Persisted only',
             'messages' => wp_json_encode($persisted_history),
@@ -130,7 +130,7 @@ class RestApiSafetyTest extends WP_UnitTestCase {
         $other_id = self::factory()->user->create(['role' => 'administrator']);
         wp_set_current_user($owner_id);
 
-        $wpdb->insert(WAA_TABLE_CONVERSATIONS, [
+        $wpdb->insert(WRADMIN_TABLE_CONVERSATIONS, [
             'user_id' => $owner_id,
             'title' => 'Owner private conversation',
             'messages' => wp_json_encode([
@@ -178,7 +178,7 @@ class RestApiSafetyTest extends WP_UnitTestCase {
             ],
         ];
 
-        $wpdb->insert(WAA_TABLE_CONVERSATIONS, [
+        $wpdb->insert(WRADMIN_TABLE_CONVERSATIONS, [
             'user_id' => $user_id,
             'title' => 'Persisted only',
             'messages' => wp_json_encode([
@@ -189,10 +189,10 @@ class RestApiSafetyTest extends WP_UnitTestCase {
         ]);
 
         $resolved = $this->api->resolve_history([], (int) $wpdb->insert_id);
-        $agent = new WAA_Agent(
-            new WAA_Provider_Fake('runtime-v1'),
-            new WAA_Tool_Registry(),
-            new WAA_Audit_Log()
+        $agent = new WRADMIN_Agent(
+            new WRADMIN_Provider_Fake('runtime-v1'),
+            new WRADMIN_Tool_Registry(),
+            new WRADMIN_Audit_Log()
         );
 
         $events = iterator_to_array($agent->run('Continue from the saved conversation.', $resolved));
@@ -231,7 +231,7 @@ class RestApiSafetyTest extends WP_UnitTestCase {
         $user_id = self::factory()->user->create(['role' => 'administrator']);
         wp_set_current_user($user_id);
 
-        $wpdb->insert(WAA_TABLE_CONVERSATIONS, [
+        $wpdb->insert(WRADMIN_TABLE_CONVERSATIONS, [
             'user_id' => $user_id,
             'title' => 'Visible session',
             'messages' => wp_json_encode([
@@ -241,7 +241,7 @@ class RestApiSafetyTest extends WP_UnitTestCase {
                 'meta' => ['archived' => false],
             ]),
         ]);
-        $wpdb->insert(WAA_TABLE_CONVERSATIONS, [
+        $wpdb->insert(WRADMIN_TABLE_CONVERSATIONS, [
             'user_id' => $user_id,
             'title' => 'Archived session',
             'messages' => wp_json_encode([
@@ -267,7 +267,7 @@ class RestApiSafetyTest extends WP_UnitTestCase {
         $user_id = self::factory()->user->create(['role' => 'administrator']);
         wp_set_current_user($user_id);
 
-        $wpdb->insert(WAA_TABLE_CONVERSATIONS, [
+        $wpdb->insert(WRADMIN_TABLE_CONVERSATIONS, [
             'user_id' => $user_id,
             'title' => 'Original title',
             'messages' => wp_json_encode([
@@ -286,7 +286,7 @@ class RestApiSafetyTest extends WP_UnitTestCase {
 
         $response = rest_get_server()->dispatch($request);
         $stored = $wpdb->get_var($wpdb->prepare(
-            "SELECT messages FROM " . WAA_TABLE_CONVERSATIONS . " WHERE id = %d",
+            "SELECT messages FROM " . WRADMIN_TABLE_CONVERSATIONS . " WHERE id = %d",
             $conversation_id
         ));
         $decoded = $this->api->decode_conversation_payload($stored);
@@ -303,7 +303,7 @@ class RestApiSafetyTest extends WP_UnitTestCase {
         $user_id = self::factory()->user->create(['role' => 'administrator']);
         wp_set_current_user($user_id);
 
-        $wpdb->insert(WAA_TABLE_CONVERSATIONS, [
+        $wpdb->insert(WRADMIN_TABLE_CONVERSATIONS, [
             'user_id' => $user_id,
             'title' => 'Debuggable session',
             'messages' => wp_json_encode([
@@ -334,7 +334,7 @@ class RestApiSafetyTest extends WP_UnitTestCase {
 
         $response = rest_get_server()->dispatch($request);
         $stored = $wpdb->get_var($wpdb->prepare(
-            "SELECT messages FROM " . WAA_TABLE_CONVERSATIONS . " WHERE id = %d",
+            "SELECT messages FROM " . WRADMIN_TABLE_CONVERSATIONS . " WHERE id = %d",
             $conversation_id
         ));
         $decoded = $this->api->decode_conversation_payload($stored);
@@ -364,7 +364,7 @@ class RestApiSafetyTest extends WP_UnitTestCase {
 
         $response = rest_get_server()->dispatch($request);
         $title = $wpdb->get_var($wpdb->prepare(
-            "SELECT title FROM " . WAA_TABLE_CONVERSATIONS . " WHERE id = %d",
+            "SELECT title FROM " . WRADMIN_TABLE_CONVERSATIONS . " WHERE id = %d",
             (int) $response->get_data()['id']
         ));
 
@@ -378,7 +378,7 @@ class RestApiSafetyTest extends WP_UnitTestCase {
         $user_id = self::factory()->user->create(['role' => 'administrator']);
         wp_set_current_user($user_id);
 
-        $wpdb->insert(WAA_TABLE_CONVERSATIONS, [
+        $wpdb->insert(WRADMIN_TABLE_CONVERSATIONS, [
             'user_id' => $user_id,
             'title' => 'Plugin rollout checklist',
             'messages' => wp_json_encode([
@@ -397,7 +397,7 @@ class RestApiSafetyTest extends WP_UnitTestCase {
 
         $response = rest_get_server()->dispatch($request);
         $title = $wpdb->get_var($wpdb->prepare(
-            "SELECT title FROM " . WAA_TABLE_CONVERSATIONS . " WHERE id = %d",
+            "SELECT title FROM " . WRADMIN_TABLE_CONVERSATIONS . " WHERE id = %d",
             $conversation_id
         ));
 
@@ -411,7 +411,7 @@ class RestApiSafetyTest extends WP_UnitTestCase {
         $user_id = self::factory()->user->create(['role' => 'administrator']);
         wp_set_current_user($user_id);
 
-        $wpdb->insert(WAA_TABLE_CONVERSATIONS, [
+        $wpdb->insert(WRADMIN_TABLE_CONVERSATIONS, [
             'user_id' => $user_id,
             'title' => 'New conversation',
             'messages' => wp_json_encode([
@@ -432,7 +432,7 @@ class RestApiSafetyTest extends WP_UnitTestCase {
 
         $response = rest_get_server()->dispatch($request);
         $title = $wpdb->get_var($wpdb->prepare(
-            "SELECT title FROM " . WAA_TABLE_CONVERSATIONS . " WHERE id = %d",
+            "SELECT title FROM " . WRADMIN_TABLE_CONVERSATIONS . " WHERE id = %d",
             $conversation_id
         ));
 
@@ -446,7 +446,7 @@ class RestApiSafetyTest extends WP_UnitTestCase {
         $user_id = self::factory()->user->create(['role' => 'administrator']);
         wp_set_current_user($user_id);
 
-        $wpdb->insert(WAA_TABLE_CONVERSATIONS, [
+        $wpdb->insert(WRADMIN_TABLE_CONVERSATIONS, [
             'user_id' => $user_id,
             'title' => 'Install WooCommerce',
             'messages' => wp_json_encode([
@@ -481,7 +481,7 @@ class RestApiSafetyTest extends WP_UnitTestCase {
 
         $response = rest_get_server()->dispatch($request);
         $title = $wpdb->get_var($wpdb->prepare(
-            "SELECT title FROM " . WAA_TABLE_CONVERSATIONS . " WHERE id = %d",
+            "SELECT title FROM " . WRADMIN_TABLE_CONVERSATIONS . " WHERE id = %d",
             $conversation_id
         ));
 
@@ -504,10 +504,10 @@ class RestApiSafetyTest extends WP_UnitTestCase {
             $history[] = ['role' => 'assistant', 'content' => '', 'tool_calls' => []];
         }
 
-        $agent = new WAA_Agent(
-            new WAA_Provider_Fake('runtime-v1'),
-            new WAA_Tool_Registry(),
-            new WAA_Audit_Log()
+        $agent = new WRADMIN_Agent(
+            new WRADMIN_Provider_Fake('runtime-v1'),
+            new WRADMIN_Tool_Registry(),
+            new WRADMIN_Audit_Log()
         );
 
         $normalized = $agent->normalize_history($history);
@@ -545,10 +545,10 @@ class RestApiSafetyTest extends WP_UnitTestCase {
 
         $history[] = ['role' => 'user', 'content' => 'Latest question'];
 
-        $agent = new WAA_Agent(
-            new WAA_Provider_Fake('runtime-v1'),
-            new WAA_Tool_Registry(),
-            new WAA_Audit_Log()
+        $agent = new WRADMIN_Agent(
+            new WRADMIN_Provider_Fake('runtime-v1'),
+            new WRADMIN_Tool_Registry(),
+            new WRADMIN_Audit_Log()
         );
 
         $normalized = $agent->normalize_history($history);
@@ -569,9 +569,9 @@ class RestApiSafetyTest extends WP_UnitTestCase {
         wp_set_current_user($user_id);
 
         $tool = new TestConfirmationTool();
-        $registry = new WAA_Tool_Registry();
+        $registry = new WRADMIN_Tool_Registry();
         $registry->register($tool);
-        $agent = new WAA_Agent(
+        $agent = new WRADMIN_Agent(
             new TestConfirmationProvider([
                 'stop_reason' => 'tool_use',
                 'text' => 'I am ready to deactivate the plugin.',
@@ -594,7 +594,7 @@ class RestApiSafetyTest extends WP_UnitTestCase {
     }
 
     public function test_registry_exposes_core_woocommerce_tools(): void {
-        $registry = WAA_REST_API::build_registry();
+        $registry = WRADMIN_REST_API::build_registry();
         $tool_names = array_column($registry->get_schemas(), 'name');
 
         $this->assertContains('get_woocommerce_status', $tool_names);
@@ -609,7 +609,7 @@ class RestApiSafetyTest extends WP_UnitTestCase {
             'create_woocommerce_coupon',
         ];
         foreach ($write_tools as $write_tool) {
-            if (defined('WAA_PRO_VERSION')) {
+            if (defined('WRADMIN_PRO_VERSION')) {
                 $this->assertContains($write_tool, $tool_names);
             } else {
                 $this->assertNotContains($write_tool, $tool_names);
@@ -618,10 +618,10 @@ class RestApiSafetyTest extends WP_UnitTestCase {
     }
 
     public function test_agent_requires_confirmation_for_woocommerce_write_tools(): void {
-        $agent = new WAA_Agent(
-            new WAA_Provider_Fake('runtime-v1'),
-            new WAA_Tool_Registry(),
-            new WAA_Audit_Log()
+        $agent = new WRADMIN_Agent(
+            new WRADMIN_Provider_Fake('runtime-v1'),
+            new WRADMIN_Tool_Registry(),
+            new WRADMIN_Audit_Log()
         );
 
         $settings_confirmation = $agent->classify_action('update_woocommerce_settings', [
@@ -645,7 +645,7 @@ class RestApiSafetyTest extends WP_UnitTestCase {
     }
 
     public function test_get_woocommerce_status_returns_installation_state_without_fatal_errors(): void {
-        $tool = new WAA_Tool_Get_WooCommerce_Status();
+        $tool = new WRADMIN_Tool_Get_WooCommerce_Status();
         $result = $tool->execute([]);
 
         $this->assertArrayHasKey('success', $result);
@@ -659,9 +659,9 @@ class RestApiSafetyTest extends WP_UnitTestCase {
         wp_set_current_user($user_id);
 
         $tool = new TestConfirmationTool();
-        $registry = new WAA_Tool_Registry();
+        $registry = new WRADMIN_Tool_Registry();
         $registry->register($tool);
-        $agent = new WAA_Agent(
+        $agent = new WRADMIN_Agent(
             new TestConfirmationProvider([
                 'stop_reason' => 'end_turn',
                 'text' => '',
@@ -672,7 +672,7 @@ class RestApiSafetyTest extends WP_UnitTestCase {
             new TestAuditLog()
         );
 
-        $action_id = WAA_Pending_Action::create(
+        $action_id = WRADMIN_Pending_Action::create(
             'deactivate_plugin',
             'tc_confirm',
             ['plugin_file' => 'hello-dolly/hello.php'],
@@ -698,9 +698,9 @@ class RestApiSafetyTest extends WP_UnitTestCase {
         wp_set_current_user($user_id);
 
         $tool = new TestFailingConfirmationTool();
-        $registry = new WAA_Tool_Registry();
+        $registry = new WRADMIN_Tool_Registry();
         $registry->register($tool);
-        $agent = new WAA_Agent(
+        $agent = new WRADMIN_Agent(
             new TestConfirmationProvider([
                 'stop_reason' => 'end_turn',
                 'text' => '',
@@ -711,7 +711,7 @@ class RestApiSafetyTest extends WP_UnitTestCase {
             new TestAuditLog()
         );
 
-        $action_id = WAA_Pending_Action::create(
+        $action_id = WRADMIN_Pending_Action::create(
             'deactivate_plugin',
             'tc_failed_confirm',
             ['plugin_file' => 'hello-dolly/hello.php'],
@@ -748,7 +748,7 @@ class RestApiSafetyTest extends WP_UnitTestCase {
         ];
 
         foreach ($cases as $index => $case) {
-            $agent = new WAA_Agent(
+            $agent = new WRADMIN_Agent(
                 new TestConfirmationProvider([
                     'stop_reason' => 'tool_use',
                     'text' => 'I am ready to apply this site-level change.',
@@ -759,7 +759,7 @@ class RestApiSafetyTest extends WP_UnitTestCase {
                     ]],
                     'usage' => ['input_tokens' => 2, 'output_tokens' => 1],
                 ]),
-                new WAA_Tool_Registry(),
+                new WRADMIN_Tool_Registry(),
                 new TestAuditLog()
             );
 
@@ -778,9 +778,9 @@ class RestApiSafetyTest extends WP_UnitTestCase {
         wp_set_current_user($user_id);
 
         $tool = new TestUpdateSettingsTool();
-        $registry = new WAA_Tool_Registry();
+        $registry = new WRADMIN_Tool_Registry();
         $registry->register($tool);
-        $agent = new WAA_Agent(
+        $agent = new WRADMIN_Agent(
             new TestConfirmationProvider([
                 'stop_reason' => 'end_turn',
                 'text' => '',
@@ -791,7 +791,7 @@ class RestApiSafetyTest extends WP_UnitTestCase {
             new TestAuditLog()
         );
 
-        $action_id = WAA_Pending_Action::create(
+        $action_id = WRADMIN_Pending_Action::create(
             'update_site_settings',
             'tc_settings',
             ['updates' => ['blogname' => 'New title', 'timezone_string' => 'Asia/Ho_Chi_Minh']],
@@ -819,9 +819,9 @@ class RestApiSafetyTest extends WP_UnitTestCase {
         wp_set_current_user($user_id);
 
         $tool = new TestInstallPluginTool();
-        $registry = new WAA_Tool_Registry();
+        $registry = new WRADMIN_Tool_Registry();
         $registry->register($tool);
-        $agent = new WAA_Agent(
+        $agent = new WRADMIN_Agent(
             new TestConfirmationProvider([
                 'stop_reason' => 'end_turn',
                 'text' => '',
@@ -832,7 +832,7 @@ class RestApiSafetyTest extends WP_UnitTestCase {
             new TestAuditLog()
         );
 
-        $action_id = WAA_Pending_Action::create('install_plugin', 'tc_install_plugin', ['slug' => 'woocommerce'], 0);
+        $action_id = WRADMIN_Pending_Action::create('install_plugin', 'tc_install_plugin', ['slug' => 'woocommerce'], 0);
         $events = iterator_to_array($agent->run('Yes, proceed.', [], [
             'approved' => true,
             'action_id' => $action_id,
@@ -853,9 +853,9 @@ class RestApiSafetyTest extends WP_UnitTestCase {
         wp_set_current_user($user_id);
 
         $tool = new TestInstallThemeTool();
-        $registry = new WAA_Tool_Registry();
+        $registry = new WRADMIN_Tool_Registry();
         $registry->register($tool);
-        $agent = new WAA_Agent(
+        $agent = new WRADMIN_Agent(
             new TestConfirmationProvider([
                 'stop_reason' => 'end_turn',
                 'text' => '',
@@ -866,7 +866,7 @@ class RestApiSafetyTest extends WP_UnitTestCase {
             new TestAuditLog()
         );
 
-        $action_id = WAA_Pending_Action::create('install_theme', 'tc_install_theme', ['slug' => 'astra'], 0);
+        $action_id = WRADMIN_Pending_Action::create('install_theme', 'tc_install_theme', ['slug' => 'astra'], 0);
         $events = iterator_to_array($agent->run('Yes, proceed.', [], [
             'approved' => true,
             'action_id' => $action_id,
@@ -882,14 +882,14 @@ class RestApiSafetyTest extends WP_UnitTestCase {
     }
 
     public function test_action_classification_returns_standardized_metadata_for_plugin_install(): void {
-        $agent = new WAA_Agent(
+        $agent = new WRADMIN_Agent(
             new TestConfirmationProvider([
                 'stop_reason' => 'end_turn',
                 'text' => '',
                 'tool_calls' => [],
                 'usage' => ['input_tokens' => 0, 'output_tokens' => 0],
             ]),
-            new WAA_Tool_Registry(),
+            new WRADMIN_Tool_Registry(),
             new TestAuditLog()
         );
 
@@ -909,14 +909,14 @@ class RestApiSafetyTest extends WP_UnitTestCase {
             'post_title' => 'Published post',
         ]);
 
-        $agent = new WAA_Agent(
+        $agent = new WRADMIN_Agent(
             new TestConfirmationProvider([
                 'stop_reason' => 'end_turn',
                 'text' => '',
                 'tool_calls' => [],
                 'usage' => ['input_tokens' => 0, 'output_tokens' => 0],
             ]),
-            new WAA_Tool_Registry(),
+            new WRADMIN_Tool_Registry(),
             new TestAuditLog()
         );
 
@@ -933,14 +933,14 @@ class RestApiSafetyTest extends WP_UnitTestCase {
     }
 
     public function test_action_classification_marks_background_scan_as_async_without_confirmation(): void {
-        $agent = new WAA_Agent(
+        $agent = new WRADMIN_Agent(
             new TestConfirmationProvider([
                 'stop_reason' => 'end_turn',
                 'text' => '',
                 'tool_calls' => [],
                 'usage' => ['input_tokens' => 0, 'output_tokens' => 0],
             ]),
-            new WAA_Tool_Registry(),
+            new WRADMIN_Tool_Registry(),
             new TestAuditLog()
         );
 
@@ -954,14 +954,14 @@ class RestApiSafetyTest extends WP_UnitTestCase {
     }
 
     public function test_content_creation_requires_confirmation_only_for_publish_and_private_statuses(): void {
-        $agent = new WAA_Agent(
+        $agent = new WRADMIN_Agent(
             new TestConfirmationProvider([
                 'stop_reason' => 'end_turn',
                 'text' => '',
                 'tool_calls' => [],
                 'usage' => ['input_tokens' => 0, 'output_tokens' => 0],
             ]),
-            new WAA_Tool_Registry(),
+            new WRADMIN_Tool_Registry(),
             new TestAuditLog()
         );
 
@@ -992,14 +992,14 @@ class RestApiSafetyTest extends WP_UnitTestCase {
             'post_title' => 'Draft post',
         ]);
 
-        $agent = new WAA_Agent(
+        $agent = new WRADMIN_Agent(
             new TestConfirmationProvider([
                 'stop_reason' => 'end_turn',
                 'text' => '',
                 'tool_calls' => [],
                 'usage' => ['input_tokens' => 0, 'output_tokens' => 0],
             ]),
-            new WAA_Tool_Registry(),
+            new WRADMIN_Tool_Registry(),
             new TestAuditLog()
         );
 
@@ -1030,14 +1030,14 @@ class RestApiSafetyTest extends WP_UnitTestCase {
             'post_title' => 'Draft post',
         ]);
 
-        $agent = new WAA_Agent(
+        $agent = new WRADMIN_Agent(
             new TestConfirmationProvider([
                 'stop_reason' => 'end_turn',
                 'text' => '',
                 'tool_calls' => [],
                 'usage' => ['input_tokens' => 0, 'output_tokens' => 0],
             ]),
-            new WAA_Tool_Registry(),
+            new WRADMIN_Tool_Registry(),
             new TestAuditLog()
         );
 
@@ -1070,14 +1070,14 @@ class RestApiSafetyTest extends WP_UnitTestCase {
             'post_title' => 'Draft page',
         ]);
 
-        $agent = new WAA_Agent(
+        $agent = new WRADMIN_Agent(
             new TestConfirmationProvider([
                 'stop_reason' => 'end_turn',
                 'text' => '',
                 'tool_calls' => [],
                 'usage' => ['input_tokens' => 0, 'output_tokens' => 0],
             ]),
-            new WAA_Tool_Registry(),
+            new WRADMIN_Tool_Registry(),
             new TestAuditLog()
         );
 
@@ -1103,14 +1103,14 @@ class RestApiSafetyTest extends WP_UnitTestCase {
             'post_title' => 'Draft page',
         ]);
 
-        $agent = new WAA_Agent(
+        $agent = new WRADMIN_Agent(
             new TestConfirmationProvider([
                 'stop_reason' => 'end_turn',
                 'text' => '',
                 'tool_calls' => [],
                 'usage' => ['input_tokens' => 0, 'output_tokens' => 0],
             ]),
-            new WAA_Tool_Registry(),
+            new WRADMIN_Tool_Registry(),
             new TestAuditLog()
         );
 
@@ -1134,7 +1134,7 @@ class RestApiSafetyTest extends WP_UnitTestCase {
             'post_title' => 'Published post',
         ]);
 
-        $agent = new WAA_Agent(
+        $agent = new WRADMIN_Agent(
             new TestConfirmationProvider([
                 'stop_reason' => 'tool_use',
                 'text' => 'I am ready to update the live post.',
@@ -1148,7 +1148,7 @@ class RestApiSafetyTest extends WP_UnitTestCase {
                 ]],
                 'usage' => ['input_tokens' => 2, 'output_tokens' => 1],
             ]),
-            new WAA_Tool_Registry(),
+            new WRADMIN_Tool_Registry(),
             new TestAuditLog()
         );
 
@@ -1168,7 +1168,7 @@ class RestApiSafetyTest extends WP_UnitTestCase {
             'post_title' => 'Published post',
         ]);
 
-        $agent = new WAA_Agent(
+        $agent = new WRADMIN_Agent(
             new TestConfirmationProvider([
                 'stop_reason' => 'tool_use',
                 'text' => 'I am ready to update the featured image.',
@@ -1183,7 +1183,7 @@ class RestApiSafetyTest extends WP_UnitTestCase {
                 ]],
                 'usage' => ['input_tokens' => 2, 'output_tokens' => 1],
             ]),
-            new WAA_Tool_Registry(),
+            new WRADMIN_Tool_Registry(),
             new TestAuditLog()
         );
 
@@ -1200,7 +1200,7 @@ class RestApiSafetyTest extends WP_UnitTestCase {
         $user_id = self::factory()->user->create(['role' => 'administrator']);
         wp_set_current_user($user_id);
 
-        $publish_events = iterator_to_array((new WAA_Agent(
+        $publish_events = iterator_to_array((new WRADMIN_Agent(
             new TestConfirmationProvider([
                 'stop_reason' => 'tool_use',
                 'text' => 'Ready to publish the post.',
@@ -1211,14 +1211,14 @@ class RestApiSafetyTest extends WP_UnitTestCase {
                 ]],
                 'usage' => ['input_tokens' => 3, 'output_tokens' => 2],
             ]),
-            new WAA_Tool_Registry(),
+            new WRADMIN_Tool_Registry(),
             new TestAuditLog()
         ))->run('Publish this post'));
 
         $draft_tool = new TestCreatePostTool();
-        $draft_registry = new WAA_Tool_Registry();
+        $draft_registry = new WRADMIN_Tool_Registry();
         $draft_registry->register($draft_tool);
-        $draft_events = iterator_to_array((new WAA_Agent(
+        $draft_events = iterator_to_array((new WRADMIN_Agent(
             new TestSequenceProvider([
                 [
                     'stop_reason' => 'tool_use',
@@ -1257,22 +1257,22 @@ class RestApiSafetyTest extends WP_UnitTestCase {
         $other_id = self::factory()->user->create(['role' => 'administrator']);
         wp_set_current_user($owner_id);
 
-        $action_id = WAA_Pending_Action::create('deactivate_plugin', 'tc_bound', ['plugin_file' => 'hello.php'], 42);
+        $action_id = WRADMIN_Pending_Action::create('deactivate_plugin', 'tc_bound', ['plugin_file' => 'hello.php'], 42);
 
-        $this->assertWPError(WAA_Pending_Action::consume($action_id, 43));
+        $this->assertWPError(WRADMIN_Pending_Action::consume($action_id, 43));
         wp_set_current_user($other_id);
-        $this->assertWPError(WAA_Pending_Action::consume($action_id, 42));
+        $this->assertWPError(WRADMIN_Pending_Action::consume($action_id, 42));
 
         wp_set_current_user($owner_id);
-        $claimed = WAA_Pending_Action::consume($action_id, 42);
+        $claimed = WRADMIN_Pending_Action::consume($action_id, 42);
         $this->assertIsArray($claimed);
         $this->assertSame('deactivate_plugin', $claimed['tool_name']);
         $this->assertSame(['plugin_file' => 'hello.php'], $claimed['tool_input']);
-        $this->assertWPError(WAA_Pending_Action::consume($action_id, 42));
+        $this->assertWPError(WRADMIN_Pending_Action::consume($action_id, 42));
     }
 }
 
-class TestConfirmationProvider extends WAA_Provider_Base {
+class TestConfirmationProvider extends WRADMIN_Provider_Base {
     public function __construct(
         private readonly array $response
     ) {}
@@ -1290,7 +1290,7 @@ class TestConfirmationProvider extends WAA_Provider_Base {
     }
 }
 
-class TestSequenceProvider extends WAA_Provider_Base {
+class TestSequenceProvider extends WRADMIN_Provider_Base {
     private int $cursor = 0;
 
     public function __construct(
@@ -1313,7 +1313,7 @@ class TestSequenceProvider extends WAA_Provider_Base {
     }
 }
 
-class TestConfirmationTool extends WAA_Tool_Base {
+class TestConfirmationTool extends WRADMIN_Tool_Base {
     public int $executions = 0;
 
     public function get_name(): string {
@@ -1344,7 +1344,7 @@ class TestConfirmationTool extends WAA_Tool_Base {
     }
 }
 
-class TestFailingConfirmationTool extends WAA_Tool_Base {
+class TestFailingConfirmationTool extends WRADMIN_Tool_Base {
     public int $executions = 0;
 
     public function get_name(): string {
@@ -1376,7 +1376,7 @@ class TestFailingConfirmationTool extends WAA_Tool_Base {
     }
 }
 
-class TestUpdateSettingsTool extends WAA_Tool_Base {
+class TestUpdateSettingsTool extends WRADMIN_Tool_Base {
     public int $executions = 0;
 
     public function get_name(): string {
@@ -1412,7 +1412,7 @@ class TestUpdateSettingsTool extends WAA_Tool_Base {
     }
 }
 
-class TestInstallPluginTool extends WAA_Tool_Base {
+class TestInstallPluginTool extends WRADMIN_Tool_Base {
     public int $executions = 0;
 
     public function get_name(): string {
@@ -1444,7 +1444,7 @@ class TestInstallPluginTool extends WAA_Tool_Base {
     }
 }
 
-class TestInstallThemeTool extends WAA_Tool_Base {
+class TestInstallThemeTool extends WRADMIN_Tool_Base {
     public int $executions = 0;
 
     public function get_name(): string {
@@ -1476,7 +1476,7 @@ class TestInstallThemeTool extends WAA_Tool_Base {
     }
 }
 
-class TestCreatePostTool extends WAA_Tool_Base {
+class TestCreatePostTool extends WRADMIN_Tool_Base {
     public int $executions = 0;
 
     public function get_name(): string {
@@ -1509,7 +1509,7 @@ class TestCreatePostTool extends WAA_Tool_Base {
     }
 }
 
-class TestAuditLog extends WAA_Audit_Log {
+class TestAuditLog extends WRADMIN_Audit_Log {
     public array $entries = [];
 
     public function write(string $tool, array $params, array $result, array $meta = []): void {

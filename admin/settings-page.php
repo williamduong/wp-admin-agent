@@ -1,18 +1,20 @@
 <?php defined('ABSPATH') || exit;
 
-$settings     = new WAA_Settings();
+function wradmin_render_settings_page(): void {
+
+$settings     = new WRADMIN_Settings();
 $provider     = $settings->get_provider();
 $model        = $settings->get_model();
 $custom_rules = $settings->get_custom_rules();
 $disabled     = $settings->get_disabled_tools();
-$pricing      = WAA_Pricing::all_for_js();
+$pricing      = WRADMIN_Pricing::all_for_js();
 
 // phpcs:ignore WordPress.Security.NonceVerification.Recommended -- Read-only tab selection; no data is changed.
 $active_tab = isset($_GET['tab']) ? sanitize_key(wp_unslash($_GET['tab'])) : 'provider';
 
 // Build tool list for Tools tab
-$all_schemas  = WAA_REST_API::build_registry()->get_schemas(); // no disabled filter here — show all
-$settings_tabs = apply_filters('waa_admin_agent_settings_tabs', [
+$all_schemas  = WRADMIN_REST_API::build_registry()->get_schemas(); // no disabled filter here — show all
+$settings_tabs = apply_filters('wradmin_admin_agent_settings_tabs', [
     'provider' => 'Provider & Keys',
     'prompt' => 'System Prompt',
     'tools' => 'Tools (' . count($all_schemas) . ')',
@@ -20,7 +22,7 @@ $settings_tabs = apply_filters('waa_admin_agent_settings_tabs', [
 ]);
 
 // Load knowledge-base docs for Docs tab
-$kb_dir  = WAA_PLUGIN_DIR . 'knowledge-base/';
+$kb_dir  = WRADMIN_PLUGIN_DIR . 'knowledge-base/';
 $kb_docs = [];
 foreach (glob($kb_dir . '*.md') as $path) {
     $filename = basename($path);
@@ -67,8 +69,8 @@ $navigate_map = [
 
         <!-- LEFT: Tab content inside form -->
         <div style="flex:1;min-width:380px">
-            <form method="post" id="waa-settings-form" style="background:#fff;border:1px solid #c3c4c7;border-top:none;padding:20px">
-                <?php wp_nonce_field('waa_settings'); ?>
+            <form method="post" id="wradmin-settings-form" style="background:#fff;border:1px solid #c3c4c7;border-top:none;padding:20px">
+                <?php wp_nonce_field('wradmin_settings'); ?>
 
                 <!-- ══════════ TAB: PROVIDER ══════════ -->
                 <?php if ($active_tab === 'provider'): ?>
@@ -76,9 +78,9 @@ $navigate_map = [
                 <table class="form-table" role="presentation">
 
                     <tr>
-                        <th><label for="waa_provider">AI Provider</label></th>
+                        <th><label for="wradmin_provider">AI Provider</label></th>
                         <td>
-                            <select id="waa_provider" name="waa_provider">
+                            <select id="wradmin_provider" name="wradmin_provider">
                                 <option value="anthropic" <?php selected($provider,'anthropic'); ?>>Anthropic (Claude)</option>
                                 <option value="gemini"    <?php selected($provider,'gemini'); ?>>Google Gemini</option>
                                 <option value="ollama"    <?php selected($provider,'ollama'); ?>>Ollama (Local)</option>
@@ -90,29 +92,29 @@ $navigate_map = [
                     </tr>
 
                     <tr>
-                        <th><label for="waa_model">Model</label></th>
+                        <th><label for="wradmin_model">Model</label></th>
                         <td>
                             <div style="display:flex;gap:8px;align-items:center">
-                                <select id="waa_model" name="waa_model">
+                                <select id="wradmin_model" name="wradmin_model">
                                     <?php foreach ($pricing[$provider] ?? [] as $id => $info): ?>
                                         <option value="<?php echo esc_attr($id); ?>" <?php selected($model,$id); ?>>
                                             <?php echo esc_html($info['label']); ?>
                                         </option>
                                     <?php endforeach; ?>
                                 </select>
-                                <button type="button" id="waa-refresh-models" class="button button-small"
+                                <button type="button" id="wradmin-refresh-models" class="button button-small"
                                         <?php echo $provider !== 'ollama' ? 'style="display:none"' : ''; ?>>
                                     ↺ Refresh
                                 </button>
                             </div>
-                            <div id="waa-model-info" style="margin-top:6px;font-size:12px;color:#666"></div>
+                            <div id="wradmin-model-info" style="margin-top:6px;font-size:12px;color:#666"></div>
                         </td>
                     </tr>
 
                     <tr id="row-anthropic" <?php echo $provider !== 'anthropic' ? 'style="display:none"' : ''; ?>>
-                        <th><label for="waa_api_key">Anthropic API Key</label></th>
+                        <th><label for="wradmin_api_key">Anthropic API Key</label></th>
                         <td>
-                            <input type="password" id="waa_api_key" name="waa_api_key" class="regular-text"
+                            <input type="password" id="wradmin_api_key" name="wradmin_api_key" class="regular-text"
                                    value="<?php echo $settings->get_api_key() ? '••••••••' : ''; ?>"
                                    placeholder="Enter your Anthropic API key" autocomplete="off">
                             <p class="description">
@@ -126,9 +128,9 @@ $navigate_map = [
                     </tr>
 
                     <tr id="row-gemini" <?php echo $provider !== 'gemini' ? 'style="display:none"' : ''; ?>>
-                        <th><label for="waa_gemini_key">Gemini API Key</label></th>
+                        <th><label for="wradmin_gemini_key">Gemini API Key</label></th>
                         <td>
-                            <input type="password" id="waa_gemini_key" name="waa_gemini_key" class="regular-text"
+                            <input type="password" id="wradmin_gemini_key" name="wradmin_gemini_key" class="regular-text"
                                    value="<?php echo $settings->get_gemini_api_key() ? '••••••••' : ''; ?>"
                                    placeholder="Enter your Gemini API key" autocomplete="off">
                             <p class="description">
@@ -142,9 +144,9 @@ $navigate_map = [
                     </tr>
 
                     <tr id="row-ollama" <?php echo $provider !== 'ollama' ? 'style="display:none"' : ''; ?>>
-                        <th><label for="waa_ollama_url">Ollama URL</label></th>
+                        <th><label for="wradmin_ollama_url">Ollama URL</label></th>
                         <td>
-                            <input type="text" id="waa_ollama_url" name="waa_ollama_url" class="regular-text"
+                            <input type="text" id="wradmin_ollama_url" name="wradmin_ollama_url" class="regular-text"
                                    value="<?php echo esc_attr($settings->get_ollama_url()); ?>">
                             <p class="description">
                                 Same machine: <code>http://localhost:11434</code><br>
@@ -162,10 +164,10 @@ $navigate_map = [
                     <tr>
                         <th><?php esc_html_e('Data retention', 'william-research-admin-agent'); ?></th>
                         <td>
-                            <label for="waa_data_retention_days">
+                            <label for="wradmin_data_retention_days">
                                 <?php esc_html_e('Automatically delete conversations and audit records older than', 'william-research-admin-agent'); ?>
                             </label>
-                            <input type="number" id="waa_data_retention_days" name="waa_data_retention_days"
+                            <input type="number" id="wradmin_data_retention_days" name="wradmin_data_retention_days"
                                    min="7" max="365" step="1"
                                    value="<?php echo esc_attr((string) $settings->get_data_retention_days()); ?>"
                                    style="width:80px">
@@ -174,7 +176,7 @@ $navigate_map = [
                                 <?php esc_html_e('Cleanup runs daily. The default is 30 days; allowed range is 7–365 days.', 'william-research-admin-agent'); ?>
                             </p>
                             <label>
-                                <input type="checkbox" name="waa_delete_data_on_uninstall" value="1"
+                                <input type="checkbox" name="wradmin_delete_data_on_uninstall" value="1"
                                     <?php checked($settings->should_delete_data_on_uninstall()); ?>>
                                 <?php esc_html_e('Delete settings, encrypted credentials, conversations, and audit logs when the plugin is uninstalled.', 'william-research-admin-agent'); ?>
                             </label>
@@ -186,8 +188,8 @@ $navigate_map = [
                 </table>
 
                 <p>
-                    <button type="button" id="waa-test-btn" class="button button-secondary">Test Connection</button>
-                    <span id="waa-test-result" style="margin-left:10px;font-weight:500"></span>
+                    <button type="button" id="wradmin-test-btn" class="button button-secondary">Test Connection</button>
+                    <span id="wradmin-test-result" style="margin-left:10px;font-weight:500"></span>
                 </p>
                 <?php submit_button('Save Settings'); ?>
 
@@ -207,10 +209,10 @@ $navigate_map = [
                         View full runtime prompt preview ▾
                     </summary>
                     <pre style="background:#f6f7f7;border:1px solid #e2e4e7;padding:12px;font-size:12px;white-space:pre-wrap;max-height:260px;overflow-y:auto;margin-top:8px"><?php
-$provider_obj = WAA_Provider_Factory::make($settings);
-$prompt_preview = WAA_Agent::build_system_prompt(
+$provider_obj = WRADMIN_Provider_Factory::make($settings);
+$prompt_preview = WRADMIN_Agent::build_system_prompt(
     $provider_obj,
-    WAA_REST_API::build_registry($settings->get_disabled_tools()),
+    WRADMIN_REST_API::build_registry($settings->get_disabled_tools()),
     $settings
 );
 echo esc_html($prompt_preview);
@@ -227,7 +229,7 @@ echo esc_html($prompt_preview);
 
                 <!-- Custom rules (editable) -->
                 <h4 style="margin-bottom:6px">Custom rules <span style="font-weight:400;color:#666;font-size:12px">(appended last, editable)</span></h4>
-                <textarea name="waa_custom_rules" rows="8" style="width:100%;font-family:monospace;font-size:13px"
+                <textarea name="wradmin_custom_rules" rows="8" style="width:100%;font-family:monospace;font-size:13px"
                           placeholder="Add extra instructions here, e.g.:
 - Always respond in formal Vietnamese.
 - When creating a post, prefer create_draft_post.
@@ -265,12 +267,12 @@ echo esc_html($prompt_preview);
                         </p>
                     </div>
                     <div style="display:flex;gap:8px">
-                        <button type="button" class="button button-small" data-waa-toggle-all="1">Enable all</button>
-                        <button type="button" class="button button-small" data-waa-toggle-all="0">Disable all</button>
+                        <button type="button" class="button button-small" data-wradmin-toggle-all="1">Enable all</button>
+                        <button type="button" class="button button-small" data-wradmin-toggle-all="0">Disable all</button>
                     </div>
                 </div>
 
-                <table class="widefat" id="waa-tools-table">
+                <table class="widefat" id="wradmin-tools-table">
                     <thead>
                         <tr>
                             <th style="width:36px">On</th>
@@ -285,9 +287,9 @@ echo esc_html($prompt_preview);
                         $is_on     = !in_array($name, $disabled, true);
                         $schema_js = wp_json_encode($schema['input_schema'], JSON_PRETTY_PRINT | JSON_UNESCAPED_UNICODE);
                     ?>
-                        <tr id="tool-row-<?php echo esc_attr($name); ?>" class="<?php echo $is_on ? '' : 'waa-tool-disabled'; ?>">
+                        <tr id="tool-row-<?php echo esc_attr($name); ?>" class="<?php echo $is_on ? '' : 'wradmin-tool-disabled'; ?>">
                             <td>
-                                <input type="checkbox" name="waa_tool_<?php echo esc_attr($name); ?>"
+                                <input type="checkbox" name="wradmin_tool_<?php echo esc_attr($name); ?>"
                                        value="1" <?php checked($is_on); ?>
                                        data-tool-name="<?php echo esc_attr($name); ?>">
                             </td>
@@ -314,7 +316,7 @@ echo esc_html($prompt_preview);
                 </table>
 
                 <h4 style="margin-top:24px;margin-bottom:6px">Debug mode <span style="font-weight:400;color:#666;font-size:12px">(tool call log in chat)</span></h4>
-                <select name="waa_debug_mode">
+                <select name="wradmin_debug_mode">
                     <?php foreach (['off' => 'Off', 'compact' => 'Compact — errors only', 'full' => 'Full — show inputs & outputs'] as $val => $label): ?>
                         <option value="<?php echo esc_attr($val); ?>" <?php selected($settings->get_debug_mode(), $val); ?>><?php echo esc_html($label); ?></option>
                     <?php endforeach; ?>
@@ -325,13 +327,13 @@ echo esc_html($prompt_preview);
 
                 <!-- ══════════ TAB: DOCS ══════════ -->
                 <?php elseif ($active_tab === 'docs'): ?>
-                <div id="waa-docs-wrap" style="display:flex;gap:0;min-height:500px">
+                <div id="wradmin-docs-wrap" style="display:flex;gap:0;min-height:500px">
 
                     <!-- Sidebar: file tree -->
-                    <div id="waa-docs-tree" style="width:200px;flex-shrink:0;border-right:1px solid #e2e4e7;padding:12px 0">
+                    <div id="wradmin-docs-tree" style="width:200px;flex-shrink:0;border-right:1px solid #e2e4e7;padding:12px 0">
                         <?php foreach ($kb_docs as $i => $doc): ?>
                         <button type="button"
-                                class="waa-doc-link <?php echo $i === 0 ? 'waa-doc-active' : ''; ?>"
+                                class="wradmin-doc-link <?php echo $i === 0 ? 'wradmin-doc-active' : ''; ?>"
                                 data-index="<?php echo esc_attr((string) $i); ?>"
                                 >
                             📄 <?php echo esc_html($doc['label']); ?>
@@ -343,12 +345,12 @@ echo esc_html($prompt_preview);
                     </div>
 
                     <!-- Content pane -->
-                    <div id="waa-docs-content" style="flex:1;padding:20px 24px;overflow-y:auto;max-height:75vh"></div>
+                    <div id="wradmin-docs-content" style="flex:1;padding:20px 24px;overflow-y:auto;max-height:75vh"></div>
 
                 </div>
 
                 <?php else: ?>
-                    <?php do_action('waa_admin_agent_render_settings_tab', $active_tab, $settings); ?>
+                    <?php do_action('wradmin_admin_agent_render_settings_tab', $active_tab, $settings); ?>
                 <?php endif; ?>
 
             </form>
@@ -358,10 +360,10 @@ echo esc_html($prompt_preview);
         <div style="min-width:280px;margin-top:0">
             <div style="background:#fff;border:1px solid #c3c4c7;padding:16px">
                 <h3 style="margin-top:0">Pricing <span style="font-size:12px;font-weight:400;color:#666">(USD / 1M tokens)</span></h3>
-                <div id="waa-pricing-table"></div>
+                <div id="wradmin-pricing-table"></div>
 
                 <h3 style="margin-top:20px">Usage (last 30 days)</h3>
-                <div id="waa-stats-panel"><em style="color:#999;font-size:13px">Loading…</em></div>
+                <div id="wradmin-stats-panel"><em style="color:#999;font-size:13px">Loading…</em></div>
 
                 <h3 style="margin-top:20px">MCP Endpoint</h3>
                 <p style="font-size:12px;color:#555;margin:0">
@@ -373,3 +375,5 @@ echo esc_html($prompt_preview);
 
     </div>
 </div>
+<?php
+}

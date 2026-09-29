@@ -1,10 +1,13 @@
 import { useState } from 'react';
 import ChatWidget from './components/ChatWidget';
 
-const OPEN_KEY = 'waa_widget_open';
+const OPEN_KEY = 'wradmin_widget_open';
 
 function readOpen() {
-    try { return localStorage.getItem(OPEN_KEY) === '1'; } catch { return false; }
+    try {
+        const current = localStorage.getItem(OPEN_KEY);
+        return (current ?? localStorage.getItem('waa_widget_open')) === '1';
+    } catch { return false; }
 }
 
 export default function App() {

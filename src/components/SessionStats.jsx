@@ -1,7 +1,7 @@
 import styles from '../styles/stats.module.css';
 
-const { provider, model, pricing } = window.waaData ?? {};
-const debugMode = window.waaData?.debugMode ?? 'off';
+const { provider, model, pricing } = window.wradminData ?? {};
+const debugMode = window.wradminData?.debugMode ?? 'off';
 
 function getPricing() {
     return pricing?.[provider]?.[model] ?? null;

@@ -1,24 +1,24 @@
 <?php
 
 class PublicToolContractTest extends WP_UnitTestCase {
-    /** @return WAA_Tool_Base[] */
+    /** @return WRADMIN_Tool_Base[] */
     private function public_tools(): array {
         return [
-            new WAA_Tool_Get_Settings(),
-            new WAA_Tool_List_Plugins(),
-            new WAA_Tool_List_Themes(),
-            new WAA_Tool_Search_Themes(),
-            new WAA_Tool_List_Users(),
-            new WAA_Tool_List_Posts(),
-            new WAA_Tool_Create_Draft_Post(),
-            new WAA_Tool_Navigate(),
-            new WAA_Tool_Search_Icon(),
-            new WAA_Tool_Get_WooCommerce_Status(),
-            new WAA_Tool_List_WooCommerce_Products(),
-            new WAA_Tool_List_WooCommerce_Orders(),
-            new WAA_Tool_Fetch_Rss(),
-            new WAA_Tool_Wordfence_Get_Settings(),
-            new WAA_Tool_Wordfence_Get_Scan_Results(),
+            new WRADMIN_Tool_Get_Settings(),
+            new WRADMIN_Tool_List_Plugins(),
+            new WRADMIN_Tool_List_Themes(),
+            new WRADMIN_Tool_Search_Themes(),
+            new WRADMIN_Tool_List_Users(),
+            new WRADMIN_Tool_List_Posts(),
+            new WRADMIN_Tool_Create_Draft_Post(),
+            new WRADMIN_Tool_Navigate(),
+            new WRADMIN_Tool_Search_Icon(),
+            new WRADMIN_Tool_Get_WooCommerce_Status(),
+            new WRADMIN_Tool_List_WooCommerce_Products(),
+            new WRADMIN_Tool_List_WooCommerce_Orders(),
+            new WRADMIN_Tool_Fetch_Rss(),
+            new WRADMIN_Tool_Wordfence_Get_Settings(),
+            new WRADMIN_Tool_Wordfence_Get_Scan_Results(),
         ];
     }
 
@@ -58,7 +58,7 @@ class PublicToolContractTest extends WP_UnitTestCase {
     }
 
     public function test_every_public_tool_rejects_unauthorized_and_unknown_input(): void {
-        $registry = WAA_REST_API::build_registry();
+        $registry = WRADMIN_REST_API::build_registry();
         $subscriber_id = self::factory()->user->create(['role' => 'subscriber']);
         wp_set_current_user($subscriber_id);
 
@@ -94,17 +94,17 @@ class PublicToolContractTest extends WP_UnitTestCase {
 
     public function test_required_and_bounded_inputs_fail_before_execution(): void {
         foreach ([
-            new WAA_Tool_Create_Draft_Post(),
-            new WAA_Tool_Navigate(),
-            new WAA_Tool_Search_Themes(),
-            new WAA_Tool_Search_Icon(),
+            new WRADMIN_Tool_Create_Draft_Post(),
+            new WRADMIN_Tool_Navigate(),
+            new WRADMIN_Tool_Search_Themes(),
+            new WRADMIN_Tool_Search_Icon(),
         ] as $tool) {
             $invalid = $tool->validate_input([]);
             $this->assertWPError($invalid, "Missing required input was accepted by {$tool->get_name()}");
             $this->assertSame('tool_input_required', $invalid->get_error_code());
         }
 
-        $scan_tool = new WAA_Tool_Wordfence_Get_Scan_Results();
+        $scan_tool = new WRADMIN_Tool_Wordfence_Get_Scan_Results();
         $this->assertSame('tool_input_minimum', $scan_tool->validate_input(['limit' => 0])->get_error_code());
         $this->assertSame('tool_input_maximum', $scan_tool->validate_input(['limit' => 101])->get_error_code());
     }
@@ -114,11 +114,11 @@ class PublicToolContractTest extends WP_UnitTestCase {
             $this->markTestSkipped('Dependency-absent error coverage requires the normal CI fixture.');
         }
 
-        $woo_status = (new WAA_Tool_Get_WooCommerce_Status())->execute([]);
-        $woo_products = (new WAA_Tool_List_WooCommerce_Products())->execute([]);
-        $woo_orders = (new WAA_Tool_List_WooCommerce_Orders())->execute([]);
-        $wordfence_settings = (new WAA_Tool_Wordfence_Get_Settings())->execute([]);
-        $wordfence_scan = (new WAA_Tool_Wordfence_Get_Scan_Results())->execute([]);
+        $woo_status = (new WRADMIN_Tool_Get_WooCommerce_Status())->execute([]);
+        $woo_products = (new WRADMIN_Tool_List_WooCommerce_Products())->execute([]);
+        $woo_orders = (new WRADMIN_Tool_List_WooCommerce_Orders())->execute([]);
+        $wordfence_settings = (new WRADMIN_Tool_Wordfence_Get_Settings())->execute([]);
+        $wordfence_scan = (new WRADMIN_Tool_Wordfence_Get_Scan_Results())->execute([]);
 
         $this->assertTrue($woo_status['success']);
         $this->assertFalse($woo_status['active']);

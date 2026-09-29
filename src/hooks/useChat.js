@@ -12,8 +12,8 @@ import {
     matchWorkflowLaunchCommand,
 } from '../lib/workflows';
 
-const STORAGE_KEY = 'waa_chat_v1';
-const PRO_FEATURES_ENABLED = Boolean(globalThis.waaData?.isPro);
+const STORAGE_KEY = 'wradmin_chat_v1';
+const PRO_FEATURES_ENABLED = Boolean(globalThis.wradminData?.isPro);
 const EMPTY_TRACE = {
     event_count: 0,
     first_event_ms: 0,
@@ -192,7 +192,7 @@ function guardAssistantTurnContent(text, toolResults) {
 
 function loadFromStorage() {
     try {
-        const raw = localStorage.getItem(STORAGE_KEY);
+        const raw = localStorage.getItem(STORAGE_KEY) ?? localStorage.getItem('waa_chat_v1');
         if (!raw) {
             return { messages: [], history: [], usage: EMPTY_USAGE, conversationId: null, pendingConfirmation: null, activeWorkflow: null };
         }

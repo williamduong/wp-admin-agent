@@ -2,7 +2,7 @@
 
 defined('ABSPATH') || exit;
 
-class WAA_Network_Guard {
+class WRADMIN_Network_Guard {
     private const METADATA_HOSTS = [
         'metadata.google.internal',
         'metadata.google.com',

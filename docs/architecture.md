@@ -11,7 +11,7 @@ flowchart LR
     AGENT --> REGISTRY[Tool registry]
     REGISTRY --> WP[WordPress APIs]
     REGISTRY --> WC[WooCommerce APIs]
-    API --> TABLES[(waa_logs + waa_conversations)]
+    API --> TABLES[(wradmin_logs + wradmin_conversations)]
     CLIENT[Authorized MCP client] -->|JSON-RPC| API
 ```
 
@@ -71,8 +71,8 @@ Each tool defines a machine-readable name, description, input schema, execution 
 
 The plugin creates two prefixed tables:
 
-- `<prefix>waa_conversations` stores conversation records and messages.
-- `<prefix>waa_logs` stores execution and usage metadata.
+- `<prefix>wradmin_conversations` stores conversation records and messages.
+- `<prefix>wradmin_logs` stores execution and usage metadata.
 
 General settings and encrypted credentials are stored using WordPress options. The actual prefix is the site's configured `$table_prefix`.
 

@@ -30,13 +30,13 @@ async function sendMessage(page, message) {
 test('provider and retention settings persist through the real WordPress form', async ({ page }) => {
     await page.goto('/wp-admin/admin.php?page=wp-admin-agent');
 
-    await page.locator('#waa_provider').selectOption('fake');
-    await page.locator('#waa_data_retention_days').fill('14');
+    await page.locator('#wradmin_provider').selectOption('fake');
+    await page.locator('#wradmin_data_retention_days').fill('14');
     await page.getByRole('button', { name: 'Save Settings' }).click();
 
     await page.reload();
-    await expect(page.locator('#waa_provider')).toHaveValue('fake');
-    await expect(page.locator('#waa_data_retention_days')).toHaveValue('14');
+    await expect(page.locator('#wradmin_provider')).toHaveValue('fake');
+    await expect(page.locator('#wradmin_data_retention_days')).toHaveValue('14');
 });
 
 test('chat streams and the saved conversation can be loaded from history', async ({ page }) => {
@@ -71,14 +71,24 @@ test('protected actions wait for explicit approval and can be cancelled', async 
 
 test('provider configuration failures are shown in the browser', async ({ page }) => {
     await page.goto('/wp-admin/admin.php?page=wp-admin-agent');
-    await page.locator('#waa_provider').selectOption('anthropic');
+    await page.locator('#wradmin_provider').selectOption('anthropic');
     await page.getByRole('button', { name: 'Save Settings' }).click();
     await page.reload();
-    await expect(page.locator('#waa_provider')).toHaveValue('anthropic');
+    await expect(page.locator('#wradmin_provider')).toHaveValue('anthropic');
 
     await openAssistant(page);
     await page.getByRole('button', { name: 'Start a new session' }).click();
     await sendMessage(page, 'This request should fail without credentials.');
 
     await expect(page.getByText('AI provider not configured. Please go to Settings → Admin Agent.', { exact: true })).toBeVisible();
+});
+
+test('prefix upgrade preserves encrypted settings and database rows', async ({ page }) => {
+    const response = await page.request.post('/wp-admin/admin-ajax.php?action=wradmin_test_prefix_upgrade');
+    expect(response.ok()).toBeTruthy();
+    const result = await response.json();
+    expect(result, JSON.stringify(result)).toMatchObject({
+        success: true,
+        data: { migrated: true, key: 'preserved-key', row: 42 },
+    });
 });

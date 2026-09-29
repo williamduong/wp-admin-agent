@@ -1,29 +1,29 @@
-.waa-pricing-table { border-collapse:collapse; width:100%; font-size:12px; }
-.waa-pricing-table th { text-align:left; padding:4px 8px; background:#f6f7f7; border:1px solid #e2e4e7; }
-.waa-pricing-table td { padding:4px 8px; border:1px solid #e2e4e7; white-space:nowrap; }
-.waa-pricing-table tr.active td { background:#f0f6fc; font-weight:600; }
-.waa-free { color:#00a32a; font-weight:600; }
-.waa-stat-grid { display:grid; grid-template-columns:1fr 1fr; gap:8px; margin-bottom:12px; }
-.waa-stat-card { background:#f6f7f7; border:1px solid #e2e4e7; border-radius:6px; padding:10px 12px; }
-.waa-stat-card .value { font-size:20px; font-weight:700; color:#2271b1; }
-.waa-stat-card .label { font-size:11px; color:#666; margin-top:2px; }
-.waa-tool-disabled td { opacity:.5; }
-#waa-tools-table code { background:#f0f0f0; padding:2px 6px; border-radius:3px; }
+.wradmin-pricing-table { border-collapse:collapse; width:100%; font-size:12px; }
+.wradmin-pricing-table th { text-align:left; padding:4px 8px; background:#f6f7f7; border:1px solid #e2e4e7; }
+.wradmin-pricing-table td { padding:4px 8px; border:1px solid #e2e4e7; white-space:nowrap; }
+.wradmin-pricing-table tr.active td { background:#f0f6fc; font-weight:600; }
+.wradmin-free { color:#00a32a; font-weight:600; }
+.wradmin-stat-grid { display:grid; grid-template-columns:1fr 1fr; gap:8px; margin-bottom:12px; }
+.wradmin-stat-card { background:#f6f7f7; border:1px solid #e2e4e7; border-radius:6px; padding:10px 12px; }
+.wradmin-stat-card .value { font-size:20px; font-weight:700; color:#2271b1; }
+.wradmin-stat-card .label { font-size:11px; color:#666; margin-top:2px; }
+.wradmin-tool-disabled td { opacity:.5; }
+#wradmin-tools-table code { background:#f0f0f0; padding:2px 6px; border-radius:3px; }
 /* Docs tab */
-.waa-doc-link { display:block; width:100%; text-align:left; background:none; border:none; padding:8px 16px; font-size:13px; cursor:pointer; color:#1d2327; border-left:3px solid transparent; line-height:1.4; }
-.waa-doc-link:hover { background:#f6f7f7; }
-.waa-doc-link.waa-doc-active { background:#f0f6fc; border-left-color:#2271b1; color:#2271b1; font-weight:600; }
-#waa-docs-content { font-size:14px; line-height:1.7; color:#1d2327; }
-#waa-docs-content .waa-doc-h { border-bottom:1px solid #e2e4e7; padding-bottom:6px; margin-top:24px; margin-bottom:12px; }
-#waa-docs-content h1.waa-doc-h { font-size:22px; }
-#waa-docs-content h2.waa-doc-h { font-size:18px; }
-#waa-docs-content h3.waa-doc-h { font-size:15px; border-bottom:none; }
-#waa-docs-content .waa-doc-p { margin:6px 0; }
-#waa-docs-content .waa-doc-code { background:#f6f7f7; border:1px solid #e2e4e7; border-radius:4px; padding:12px 16px; overflow-x:auto; font-size:12px; line-height:1.6; margin:12px 0; }
-#waa-docs-content code { background:#f0f0f0; padding:1px 5px; border-radius:3px; font-size:12px; }
-#waa-docs-content li { margin:3px 0 3px 20px; list-style:disc; }
-#waa-docs-content strong { color:#1d2327; }
-.waa-doc-table { border-collapse:collapse; width:100%; font-size:13px; margin:12px 0; }
-.waa-doc-table th { background:#f6f7f7; text-align:left; padding:6px 10px; border:1px solid #e2e4e7; font-weight:600; }
-.waa-doc-table td { padding:6px 10px; border:1px solid #e2e4e7; }
-#waa-docs-content hr { border: none; border-top: 1px solid #e2e4e7; margin: 16px 0; }
+.wradmin-doc-link { display:block; width:100%; text-align:left; background:none; border:none; padding:8px 16px; font-size:13px; cursor:pointer; color:#1d2327; border-left:3px solid transparent; line-height:1.4; }
+.wradmin-doc-link:hover { background:#f6f7f7; }
+.wradmin-doc-link.wradmin-doc-active { background:#f0f6fc; border-left-color:#2271b1; color:#2271b1; font-weight:600; }
+#wradmin-docs-content { font-size:14px; line-height:1.7; color:#1d2327; }
+#wradmin-docs-content .wradmin-doc-h { border-bottom:1px solid #e2e4e7; padding-bottom:6px; margin-top:24px; margin-bottom:12px; }
+#wradmin-docs-content h1.wradmin-doc-h { font-size:22px; }
+#wradmin-docs-content h2.wradmin-doc-h { font-size:18px; }
+#wradmin-docs-content h3.wradmin-doc-h { font-size:15px; border-bottom:none; }
+#wradmin-docs-content .wradmin-doc-p { margin:6px 0; }
+#wradmin-docs-content .wradmin-doc-code { background:#f6f7f7; border:1px solid #e2e4e7; border-radius:4px; padding:12px 16px; overflow-x:auto; font-size:12px; line-height:1.6; margin:12px 0; }
+#wradmin-docs-content code { background:#f0f0f0; padding:1px 5px; border-radius:3px; font-size:12px; }
+#wradmin-docs-content li { margin:3px 0 3px 20px; list-style:disc; }
+#wradmin-docs-content strong { color:#1d2327; }
+.wradmin-doc-table { border-collapse:collapse; width:100%; font-size:13px; margin:12px 0; }
+.wradmin-doc-table th { background:#f6f7f7; text-align:left; padding:6px 10px; border:1px solid #e2e4e7; font-weight:600; }
+.wradmin-doc-table td { padding:6px 10px; border:1px solid #e2e4e7; }
+#wradmin-docs-content hr { border: none; border-top: 1px solid #e2e4e7; margin: 16px 0; }

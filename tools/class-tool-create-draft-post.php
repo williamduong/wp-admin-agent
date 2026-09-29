@@ -2,7 +2,7 @@
 
 defined('ABSPATH') || exit;
 
-class WAA_Tool_Create_Draft_Post extends WAA_Tool_Base {
+class WRADMIN_Tool_Create_Draft_Post extends WRADMIN_Tool_Base {
     public function get_name(): string { return 'create_draft_post'; }
 
     public function get_description(): string {

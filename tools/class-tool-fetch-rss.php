@@ -2,7 +2,7 @@
 
 defined('ABSPATH') || exit;
 
-class WAA_Tool_Fetch_Rss extends WAA_Tool_Base {
+class WRADMIN_Tool_Fetch_Rss extends WRADMIN_Tool_Base {
 
     private const PRESETS = [
         // Tech / Dev
@@ -14,8 +14,6 @@ class WAA_Tool_Fetch_Rss extends WAA_Tool_Base {
         'the_verge_ai'        => ['label' => 'The Verge – AI',        'url' => 'https://www.theverge.com/ai-artificial-intelligence/rss/index.xml',             'tags' => ['ai']],
         'wired'               => ['label' => 'Wired',                 'url' => 'https://www.wired.com/feed/rss',                                                'tags' => ['tech']],
         'wired_science'       => ['label' => 'Wired – Science',       'url' => 'https://www.wired.com/feed/category/science/latest/rss',                        'tags' => ['science']],
-        'mit_review'          => ['label' => 'MIT Technology Review', 'url' => 'https://www.technologyreview.com/feed/',                                        'tags' => ['tech','ai']],
-        'mit_review_ai'       => ['label' => 'MIT Tech Review – AI',  'url' => 'https://www.technologyreview.com/topic/artificial-intelligence/feed',           'tags' => ['ai']],
         // Science
         'sciencedaily'        => ['label' => 'ScienceDaily – Top',    'url' => 'https://www.sciencedaily.com/rss/top/science.xml',                              'tags' => ['science']],
         'sciencedaily_tech'   => ['label' => 'ScienceDaily – Tech',   'url' => 'https://www.sciencedaily.com/rss/top/technology.xml',                          'tags' => ['tech','science']],
@@ -91,7 +89,7 @@ class WAA_Tool_Fetch_Rss extends WAA_Tool_Base {
 
         // Custom URLs
         foreach ((array) ($input['custom_urls'] ?? []) as $url) {
-            $url = WAA_Network_Guard::public_url((string) $url);
+            $url = WRADMIN_Network_Guard::public_url((string) $url);
             if (!is_wp_error($url)) $feeds_to_fetch[$url] = $url;
         }
 

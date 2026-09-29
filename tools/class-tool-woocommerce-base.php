@@ -2,7 +2,7 @@
 
 defined('ABSPATH') || exit;
 
-abstract class WAA_Tool_WooCommerce_Base extends WAA_Tool_Base {
+abstract class WRADMIN_Tool_WooCommerce_Base extends WRADMIN_Tool_Base {
     protected function get_woocommerce_state(): array {
         require_once ABSPATH . 'wp-admin/includes/plugin.php';
 
@@ -93,7 +93,7 @@ abstract class WAA_Tool_WooCommerce_Base extends WAA_Tool_Base {
 
     protected function maybe_import_image(string $image_url, string $title): int|WP_Error {
         try {
-            $importer = new WAA_Media_Importer(new WAA_Resource_Fetcher());
+            $importer = new WRADMIN_Media_Importer(new WRADMIN_Resource_Fetcher());
 
             return (int) $importer->import_from_url($image_url, $title);
         } catch (Throwable $e) {

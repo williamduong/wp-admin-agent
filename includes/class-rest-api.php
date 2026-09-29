@@ -2,7 +2,7 @@
 
 defined('ABSPATH') || exit;
 
-class WAA_REST_API {
+class WRADMIN_REST_API {
     private const NS = 'wp-admin-agent/v1';
     private const DEFAULT_CONVERSATION_TITLE = 'New conversation';
     private const PROVISIONAL_TITLE_LIMIT = 60;
@@ -59,7 +59,7 @@ class WAA_REST_API {
 
         register_rest_route(self::NS, '/pricing', [
             'methods'             => 'GET',
-            'callback'            => fn() => new WP_REST_Response(WAA_Pricing::all_for_js()),
+            'callback'            => fn() => new WP_REST_Response(WRADMIN_Pricing::all_for_js()),
             'permission_callback' => [$this, 'check_permission'],
         ]);
 
@@ -80,7 +80,7 @@ class WAA_REST_API {
         if (!current_user_can('manage_options')) {
             return new WP_Error('rest_forbidden', 'Insufficient permissions.', ['status' => 403]);
         }
-        if ($this->should_rate_limit($request) && !(new WAA_Rate_Limiter())->check()) {
+        if ($this->should_rate_limit($request) && !(new WRADMIN_Rate_Limiter())->check()) {
             return new WP_Error('rate_limited', 'Too many requests. Try again in a minute.', ['status' => 429]);
         }
         return true;
@@ -107,7 +107,7 @@ class WAA_REST_API {
         $message         = $request->get_param('message');
         $conversation_id = $request->get_param('conversation_id');
 
-        $settings = new WAA_Settings();
+        $settings = new WRADMIN_Settings();
         $confirmation = isset($body['confirmation']) && is_array($body['confirmation']) ? $body['confirmation'] : null;
         $workflow = $this->resolve_active_workflow($body ?? [], (int) $conversation_id);
 
@@ -167,10 +167,10 @@ class WAA_REST_API {
         header('X-Accel-Buffering: no');
         while (ob_get_level() > 0) ob_end_flush();
 
-        $agent = new WAA_Agent(
-            WAA_Provider_Factory::make($settings),
+        $agent = new WRADMIN_Agent(
+            WRADMIN_Provider_Factory::make($settings),
             self::build_registry($settings->get_disabled_tools()),
-            new WAA_Audit_Log()
+            new WRADMIN_Audit_Log()
         );
 
         try {
@@ -213,7 +213,7 @@ class WAA_REST_API {
     }
 
     public function test_connection(WP_REST_Request $request): WP_REST_Response {
-        $settings = new WAA_Settings();
+        $settings = new WRADMIN_Settings();
         $body     = $request->get_json_params() ?? [];
         if (!is_array($body)) {
             return new WP_REST_Response(['success' => false, 'error' => 'Invalid JSON payload.'], 400);
@@ -249,10 +249,10 @@ class WAA_REST_API {
 
         try {
             $provider = match ($provider_id) {
-                'gemini' => new WAA_Provider_Gemini($gemini_key, $model),
-                'fake'   => new WAA_Provider_Fake($model),
-                'ollama' => new WAA_Provider_Ollama($ollama_url, $model),
-                default  => new WAA_Provider_Anthropic($api_key, $model),
+                'gemini' => new WRADMIN_Provider_Gemini($gemini_key, $model),
+                'fake'   => new WRADMIN_Provider_Fake($model),
+                'ollama' => new WRADMIN_Provider_Ollama($ollama_url, $model),
+                default  => new WRADMIN_Provider_Anthropic($api_key, $model),
             };
             $response = $provider->complete(
                 'You are a test assistant.',
@@ -271,7 +271,7 @@ class WAA_REST_API {
     }
 
     public function get_plugin_settings(WP_REST_Request $request): WP_REST_Response {
-        $settings = new WAA_Settings();
+        $settings = new WRADMIN_Settings();
         return new WP_REST_Response([
             'provider'       => $settings->get_provider(),
             'model'          => $settings->get_model(),
@@ -282,7 +282,7 @@ class WAA_REST_API {
     }
 
     public function save_plugin_settings(WP_REST_Request $request): WP_REST_Response {
-        $settings = new WAA_Settings();
+        $settings = new WRADMIN_Settings();
         $body     = $request->get_json_params();
         if (!is_array($body)) {
             return new WP_REST_Response(['success' => false, 'error' => 'Invalid JSON payload.'], 400);
@@ -307,7 +307,7 @@ class WAA_REST_API {
         $include_archived = (bool) $request->get_param('include_archived');
         $rows    = $wpdb->get_results($wpdb->prepare(
             "SELECT id, title, messages, created_at, updated_at FROM %i WHERE user_id = %d ORDER BY updated_at DESC LIMIT 20",
-            WAA_TABLE_CONVERSATIONS,
+            WRADMIN_TABLE_CONVERSATIONS,
             $user_id
         ));
         $visible = [];
@@ -351,7 +351,7 @@ class WAA_REST_API {
             self::DEFAULT_CONVERSATION_TITLE
         );
 
-        $wpdb->insert(WAA_TABLE_CONVERSATIONS, [
+        $wpdb->insert(WRADMIN_TABLE_CONVERSATIONS, [
             'user_id'  => get_current_user_id(),
             'title'    => $title,
             'messages' => $this->encode_conversation_payload($payload),
@@ -363,7 +363,7 @@ class WAA_REST_API {
         global $wpdb;
         $row = $wpdb->get_row($wpdb->prepare(
             "SELECT * FROM %i WHERE id = %d AND user_id = %d",
-            WAA_TABLE_CONVERSATIONS,
+            WRADMIN_TABLE_CONVERSATIONS,
             $request->get_param('id'),
             get_current_user_id()
         ));
@@ -386,7 +386,7 @@ class WAA_REST_API {
         }
         $existing = $wpdb->get_row($wpdb->prepare(
             "SELECT title, messages FROM %i WHERE id = %d AND user_id = %d",
-            WAA_TABLE_CONVERSATIONS,
+            WRADMIN_TABLE_CONVERSATIONS,
             $request->get_param('id'),
             get_current_user_id()
         ), ARRAY_A);
@@ -421,7 +421,7 @@ class WAA_REST_API {
         }
 
         $updated = $wpdb->update(
-            WAA_TABLE_CONVERSATIONS,
+            WRADMIN_TABLE_CONVERSATIONS,
             $update_data,
             [
                 'id'      => $request->get_param('id'),
@@ -438,7 +438,7 @@ class WAA_REST_API {
 
     public function delete_conversation(WP_REST_Request $request): WP_REST_Response {
         global $wpdb;
-        $deleted = $wpdb->delete(WAA_TABLE_CONVERSATIONS, [
+        $deleted = $wpdb->delete(WRADMIN_TABLE_CONVERSATIONS, [
             'id'      => $request->get_param('id'),
             'user_id' => get_current_user_id(),
         ]);
@@ -449,7 +449,7 @@ class WAA_REST_API {
         global $wpdb;
         $row = $wpdb->get_var($wpdb->prepare(
             "SELECT messages FROM %i WHERE id = %d AND user_id = %d",
-            WAA_TABLE_CONVERSATIONS,
+            WRADMIN_TABLE_CONVERSATIONS,
             $id, get_current_user_id()
         ));
         if (!$row) {
@@ -464,7 +464,7 @@ class WAA_REST_API {
         global $wpdb;
         $row = $wpdb->get_var($wpdb->prepare(
             "SELECT messages FROM %i WHERE id = %d AND user_id = %d",
-            WAA_TABLE_CONVERSATIONS,
+            WRADMIN_TABLE_CONVERSATIONS,
             $id,
             get_current_user_id()
         ));
@@ -495,7 +495,7 @@ class WAA_REST_API {
 
     public function decode_conversation_payload(string $payload): array {
         if (str_starts_with($payload, 'v2:')) {
-            $payload = (new WAA_Encryptor())->decrypt($payload);
+            $payload = (new WRADMIN_Encryptor())->decrypt($payload);
         }
         $decoded = json_decode($payload, true);
 
@@ -532,7 +532,7 @@ class WAA_REST_API {
         if (!is_string($json)) {
             throw new RuntimeException('Could not encode conversation data.');
         }
-        return (new WAA_Encryptor())->encrypt($json);
+        return (new WRADMIN_Encryptor())->encrypt($json);
     }
 
     private function validate_request_payload(array $payload): true|WP_Error {
@@ -667,7 +667,7 @@ class WAA_REST_API {
             return;
         }
 
-        $debug_mode = (new WAA_Settings())->get_debug_mode();
+        $debug_mode = (new WRADMIN_Settings())->get_debug_mode();
         if ($debug_mode === 'off') {
             return;
         }
@@ -700,7 +700,7 @@ class WAA_REST_API {
         global $wpdb;
         $existing_payload = $wpdb->get_var($wpdb->prepare(
             "SELECT messages FROM %i WHERE id = %d AND user_id = %d",
-            WAA_TABLE_CONVERSATIONS,
+            WRADMIN_TABLE_CONVERSATIONS,
             $conversation_id,
             get_current_user_id()
         ));
@@ -729,7 +729,7 @@ class WAA_REST_API {
         ];
 
         $wpdb->update(
-            WAA_TABLE_CONVERSATIONS,
+            WRADMIN_TABLE_CONVERSATIONS,
             ['messages' => $this->encode_conversation_payload($payload)],
             [
                 'id' => $conversation_id,
@@ -743,7 +743,7 @@ class WAA_REST_API {
     }
 
     private function sanitize_debug_value(mixed $value): mixed {
-        return WAA_Data_Sanitizer::sanitize($value, 4000);
+        return WRADMIN_Data_Sanitizer::sanitize($value, 4000);
     }
 
     private function truncate_debug_string(string $value, int $limit = 4000): string {
@@ -961,25 +961,25 @@ class WAA_REST_API {
         return $this->humanize_slug($base);
     }
 
-    public static function build_registry(array $disabled = []): WAA_Tool_Registry {
-        $registry = new WAA_Tool_Registry($disabled);
+    public static function build_registry(array $disabled = []): WRADMIN_Tool_Registry {
+        $registry = new WRADMIN_Tool_Registry($disabled);
 
         $tools = [
-            new WAA_Tool_Get_Settings(),
-            new WAA_Tool_List_Plugins(),
-            new WAA_Tool_List_Themes(),
-            new WAA_Tool_Search_Themes(),
-            new WAA_Tool_List_Users(),
-            new WAA_Tool_List_Posts(),
-            new WAA_Tool_Create_Draft_Post(),
-            new WAA_Tool_Navigate(),
-            new WAA_Tool_Search_Icon(),
-            new WAA_Tool_Get_WooCommerce_Status(),
-            new WAA_Tool_List_WooCommerce_Products(),
-            new WAA_Tool_List_WooCommerce_Orders(),
-            new WAA_Tool_Fetch_Rss(),
-            new WAA_Tool_Wordfence_Get_Settings(),
-            new WAA_Tool_Wordfence_Get_Scan_Results(),
+            new WRADMIN_Tool_Get_Settings(),
+            new WRADMIN_Tool_List_Plugins(),
+            new WRADMIN_Tool_List_Themes(),
+            new WRADMIN_Tool_Search_Themes(),
+            new WRADMIN_Tool_List_Users(),
+            new WRADMIN_Tool_List_Posts(),
+            new WRADMIN_Tool_Create_Draft_Post(),
+            new WRADMIN_Tool_Navigate(),
+            new WRADMIN_Tool_Search_Icon(),
+            new WRADMIN_Tool_Get_WooCommerce_Status(),
+            new WRADMIN_Tool_List_WooCommerce_Products(),
+            new WRADMIN_Tool_List_WooCommerce_Orders(),
+            new WRADMIN_Tool_Fetch_Rss(),
+            new WRADMIN_Tool_Wordfence_Get_Settings(),
+            new WRADMIN_Tool_Wordfence_Get_Scan_Results(),
         ];
 
         /**
@@ -988,12 +988,12 @@ class WAA_REST_API {
          * Extensions such as WP Admin Agent Pro use this hook to add tools
          * without placing premium implementation code in the Free plugin.
          *
-         * @param WAA_Tool_Base[] $tools Tool instances.
+         * @param WRADMIN_Tool_Base[] $tools Tool instances.
          */
-        $tools = apply_filters('waa_admin_agent_tool_instances', $tools);
+        $tools = apply_filters('wradmin_admin_agent_tool_instances', $tools);
 
         foreach ($tools as $tool) {
-            if ($tool instanceof WAA_Tool_Base) {
+            if ($tool instanceof WRADMIN_Tool_Base) {
                 $registry->register($tool);
             }
         }
@@ -1003,7 +1003,7 @@ class WAA_REST_API {
 
     public function get_stats(WP_REST_Request $request): WP_REST_Response {
         $period = (int) $request->get_param('period');
-        return new WP_REST_Response(WAA_Audit_Log::get_stats($period));
+        return new WP_REST_Response(WRADMIN_Audit_Log::get_stats($period));
     }
 
     public function handle_mcp(WP_REST_Request $request): WP_REST_Response {
@@ -1016,15 +1016,15 @@ class WAA_REST_API {
             return new WP_REST_Response(['error' => $payload_error->get_error_message()], 413);
         }
 
-        $settings = new WAA_Settings();
-        $server   = new WAA_MCP_Server(self::build_registry($settings->get_disabled_tools()));
+        $settings = new WRADMIN_Settings();
+        $server   = new WRADMIN_MCP_Server(self::build_registry($settings->get_disabled_tools()));
         return $server->handle($request);
     }
 
     public function get_ollama_models(WP_REST_Request $request): WP_REST_Response {
-        $settings = new WAA_Settings();
+        $settings = new WRADMIN_Settings();
         $base_url = rtrim($settings->get_ollama_url(), '/');
-        $validated_url = WAA_Network_Guard::ollama_url($base_url);
+        $validated_url = WRADMIN_Network_Guard::ollama_url($base_url);
         if (is_wp_error($validated_url)) {
             return new WP_REST_Response(['error' => $validated_url->get_error_message()], 400);
         }

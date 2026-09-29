@@ -10,7 +10,7 @@ class SecurityDataTest extends WP_UnitTestCase {
     }
 
     public function test_data_sanitizer_redacts_sensitive_keys_and_values(): void {
-        $sanitized = WAA_Data_Sanitizer::sanitize([
+        $sanitized = WRADMIN_Data_Sanitizer::sanitize([
             'api_key' => 'sk-secret-value-123456789',
             'profile' => ['email' => 'person@example.com'],
             'message' => 'Contact person@example.com using Bearer abc.def.ghi',
@@ -25,7 +25,7 @@ class SecurityDataTest extends WP_UnitTestCase {
     }
 
     public function test_authenticated_encryption_rejects_tampering(): void {
-        $encryptor = new WAA_Encryptor();
+        $encryptor = new WRADMIN_Encryptor();
         $ciphertext = $encryptor->encrypt('sensitive conversation');
 
         $this->assertStringStartsWith('v2:', $ciphertext);
@@ -36,7 +36,7 @@ class SecurityDataTest extends WP_UnitTestCase {
     }
 
     public function test_conversation_decoder_reads_legacy_json(): void {
-        $api = new WAA_REST_API();
+        $api = new WRADMIN_REST_API();
         $legacy = wp_json_encode(['messages' => [['role' => 'user', 'content' => 'legacy']]]);
         $decoded = $api->decode_conversation_payload($legacy);
 
@@ -44,10 +44,10 @@ class SecurityDataTest extends WP_UnitTestCase {
     }
 
     public function test_mcp_exposes_only_read_only_tools(): void {
-        $registry = new WAA_Tool_Registry();
-        $registry->register(new WAA_Tool_Get_Settings());
-        $registry->register(new WAA_Tool_Create_Draft_Post());
-        $server = new WAA_MCP_Server($registry);
+        $registry = new WRADMIN_Tool_Registry();
+        $registry->register(new WRADMIN_Tool_Get_Settings());
+        $registry->register(new WRADMIN_Tool_Create_Draft_Post());
+        $server = new WRADMIN_MCP_Server($registry);
 
         $list_request = new WP_REST_Request('POST', '/wp-admin-agent/v1/mcp');
         $list_request->set_header('content-type', 'application/json');
@@ -77,7 +77,7 @@ class SecurityDataTest extends WP_UnitTestCase {
             'display_name' => 'Public Display Name',
         ]);
 
-        $result = (new WAA_Tool_List_Users())->execute(['number' => 100]);
+        $result = (new WRADMIN_Tool_List_Users())->execute(['number' => 100]);
         $serialized = wp_json_encode($result);
 
         $this->assertStringNotContainsString('private-login', $serialized);
@@ -86,43 +86,71 @@ class SecurityDataTest extends WP_UnitTestCase {
     }
 
     public function test_tool_capability_can_be_restricted_by_policy_filter(): void {
-        $tool = new WAA_Tool_List_Users();
+        $tool = new WRADMIN_Tool_List_Users();
         $this->assertTrue($tool->check_permission());
 
         $filter = static fn(string $capability, string $name): string => $name === 'list_users'
             ? 'do_not_allow'
             : $capability;
-        add_filter('waa_tool_required_capability', $filter, 10, 2);
+        add_filter('wradmin_tool_required_capability', $filter, 10, 2);
 
         try {
             $this->assertFalse($tool->check_permission());
         } finally {
-            remove_filter('waa_tool_required_capability', $filter, 10);
+            remove_filter('wradmin_tool_required_capability', $filter, 10);
         }
     }
 
     public function test_admin_bundle_is_browser_ready_without_commonjs_runtime(): void {
-        $plugin = WAA_Plugin::get_instance();
+        $plugin = WRADMIN_Plugin::get_instance();
         $plugin->enqueue_assets();
 
-        $registered = wp_scripts()->registered['waa-admin-agent'] ?? null;
+        $registered = wp_scripts()->registered['wradmin-admin-agent'] ?? null;
         $this->assertInstanceOf(_WP_Dependency::class, $registered);
         $this->assertSame([], $registered->deps);
 
-        $bundle = file_get_contents(WAA_PLUGIN_DIR . 'assets/js/admin-agent.js');
+        $bundle = file_get_contents(WRADMIN_PLUGIN_DIR . 'assets/js/admin-agent.js');
         $this->assertIsString($bundle);
         $this->assertSame(0, preg_match('/\brequire\s*\(/', $bundle));
 
-        wp_dequeue_script('waa-admin-agent');
-        wp_deregister_script('waa-admin-agent');
+        wp_dequeue_script('wradmin-admin-agent');
+        wp_deregister_script('wradmin-admin-agent');
     }
 
     public function test_activation_creates_current_site_tables(): void {
-        WAA_Plugin::activate(false);
+        WRADMIN_Plugin::activate(false);
 
         global $wpdb;
-        $this->assertSame($wpdb->prefix . 'waa_logs', $wpdb->get_var($wpdb->prepare('SHOW TABLES LIKE %s', $wpdb->prefix . 'waa_logs')));
-        $this->assertSame($wpdb->prefix . 'waa_conversations', $wpdb->get_var($wpdb->prepare('SHOW TABLES LIKE %s', $wpdb->prefix . 'waa_conversations')));
+        $this->assertSame($wpdb->prefix . 'wradmin_logs', $wpdb->get_var($wpdb->prepare('SHOW TABLES LIKE %s', $wpdb->prefix . 'wradmin_logs')));
+        $this->assertSame($wpdb->prefix . 'wradmin_conversations', $wpdb->get_var($wpdb->prepare('SHOW TABLES LIKE %s', $wpdb->prefix . 'wradmin_conversations')));
+    }
+
+    public function test_prefix_upgrade_preserves_options_and_table_rows(): void {
+        global $wpdb;
+
+        $prefix = $wpdb->prefix . 'wradmin_migration_test_';
+        $old = $prefix . 'waa_logs';
+        $new = $prefix . 'wradmin_logs';
+        $secret = (new WRADMIN_Encryptor())->encrypt('existing-secret');
+        $wpdb->query($wpdb->prepare('CREATE TABLE %i (id BIGINT NOT NULL PRIMARY KEY)', $old));
+        $wpdb->query($wpdb->prepare('CREATE TABLE %i (id BIGINT NOT NULL PRIMARY KEY)', $new));
+        $wpdb->insert($old, ['id' => 42], ['%d']);
+        update_option('waa_db_version', '0.4.3');
+        update_option('waa_api_key_enc', $secret);
+        delete_option('wradmin_api_key_enc');
+
+        try {
+            $method = new ReflectionMethod(WRADMIN_Plugin::class, 'migrate_legacy_data');
+            $this->assertTrue($method->invoke(null, $prefix));
+            $this->assertSame('existing-secret', (new WRADMIN_Settings())->get_api_key());
+            $this->assertSame('42', (string) $wpdb->get_var($wpdb->prepare('SELECT id FROM %i', $new)));
+        } finally {
+            $wpdb->query($wpdb->prepare('DROP TABLE IF EXISTS %i', $old));
+            $wpdb->query($wpdb->prepare('DROP TABLE IF EXISTS %i', $new));
+            delete_option('waa_db_version');
+            delete_option('waa_api_key_enc');
+            delete_option('wradmin_api_key_enc');
+        }
     }
 
     public function test_network_activation_creates_tables_for_each_site(): void {
@@ -144,7 +172,7 @@ class SecurityDataTest extends WP_UnitTestCase {
         };
         add_filter('dbdelta_create_queries', $capture_queries);
         try {
-            WAA_Plugin::activate(true);
+            WRADMIN_Plugin::activate(true);
         } finally {
             remove_filter('dbdelta_create_queries', $capture_queries);
         }
@@ -154,9 +182,9 @@ class SecurityDataTest extends WP_UnitTestCase {
         $main_prefix = $wpdb->get_blog_prefix(get_main_site_id());
         $site_prefix = $wpdb->get_blog_prefix($site_id);
 
-        $this->assertStringContainsString("CREATE TABLE {$main_prefix}waa_logs", $ddl);
-        $this->assertStringContainsString("CREATE TABLE {$main_prefix}waa_conversations", $ddl);
-        $this->assertStringContainsString("CREATE TABLE {$site_prefix}waa_logs", $ddl);
-        $this->assertStringContainsString("CREATE TABLE {$site_prefix}waa_conversations", $ddl);
+        $this->assertStringContainsString("CREATE TABLE {$main_prefix}wradmin_logs", $ddl);
+        $this->assertStringContainsString("CREATE TABLE {$main_prefix}wradmin_conversations", $ddl);
+        $this->assertStringContainsString("CREATE TABLE {$site_prefix}wradmin_logs", $ddl);
+        $this->assertStringContainsString("CREATE TABLE {$site_prefix}wradmin_conversations", $ddl);
     }
 }

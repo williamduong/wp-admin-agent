@@ -26,5 +26,5 @@ export function makeClientId() {
     }
 
     const seed = `${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 10)}`;
-    return `waa-${seed}`;
+    return `wradmin-${seed}`;
 }

@@ -2,7 +2,7 @@
 
 defined('ABSPATH') || exit;
 
-class WAA_Tool_Search_Themes extends WAA_Tool_Base {
+class WRADMIN_Tool_Search_Themes extends WRADMIN_Tool_Base {
     public function get_name(): string { return 'search_themes'; }
 
     public function get_description(): string {

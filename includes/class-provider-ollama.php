@@ -9,7 +9,7 @@ defined('ABSPATH') || exit;
  * NOTE: When running inside wp-env Docker, use host.docker.internal:11434
  * instead of localhost:11434 to reach Ollama on the host machine.
  */
-class WAA_Provider_Ollama extends WAA_Provider_Base {
+class WRADMIN_Provider_Ollama extends WRADMIN_Provider_Base {
     public function __construct(
         private readonly string $base_url = 'http://host.docker.internal:11434',
         private readonly string $model    = 'gemma3:4b'
@@ -28,7 +28,7 @@ class WAA_Provider_Ollama extends WAA_Provider_Base {
     }
 
     public function complete(string $system, array $messages, array $tools): array {
-        $validated_url = WAA_Network_Guard::ollama_url($this->base_url);
+        $validated_url = WRADMIN_Network_Guard::ollama_url($this->base_url);
         if (is_wp_error($validated_url)) {
             throw new RuntimeException(esc_html($validated_url->get_error_message()));
         }

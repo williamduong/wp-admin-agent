@@ -2,7 +2,7 @@
 
 defined('ABSPATH') || exit;
 
-class WAA_Provider_Fake extends WAA_Provider_Base {
+class WRADMIN_Provider_Fake extends WRADMIN_Provider_Base {
     public function __construct(
         private readonly string $fixture = 'runtime-v1'
     ) {}
@@ -43,8 +43,8 @@ class WAA_Provider_Fake extends WAA_Provider_Base {
     private function load_fixture(): array {
         $slug = sanitize_file_name($this->fixture);
         $path = apply_filters(
-            'waa_fake_provider_fixture_path',
-            WAA_PLUGIN_DIR . 'includes/fixtures/fake-provider/' . $slug . '.json',
+            'wradmin_fake_provider_fixture_path',
+            WRADMIN_PLUGIN_DIR . 'includes/fixtures/fake-provider/' . $slug . '.json',
             $slug
         );
 

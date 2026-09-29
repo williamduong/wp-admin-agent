@@ -2,7 +2,7 @@
 
 defined('ABSPATH') || exit;
 
-class WAA_Plugin {
+class WRADMIN_Plugin {
     private static ?self $instance = null;
 
     public static function get_instance(): static {
@@ -10,12 +10,24 @@ class WAA_Plugin {
     }
 
     public function init(): void {
-        new WAA_REST_API();
+        // Plugin updates do not invoke the activation hook.
+        if (get_option('wradmin_db_version') !== WRADMIN_VERSION) {
+            self::install_for_current_site();
+            if (get_option('wradmin_db_version') !== WRADMIN_VERSION) {
+                add_action('admin_notices', static function (): void {
+                    echo '<div class="notice notice-error"><p>'
+                        . esc_html__('William Research Admin Agent could not migrate its data. Check the database and retry the update.', 'william-research-admin-agent')
+                        . '</p></div>';
+                });
+                return;
+            }
+        }
+        new WRADMIN_REST_API();
         $this->register_admin_hooks();
-        add_action('waa_cleanup_agent_data', ['WAA_Audit_Log', 'cleanup_expired']);
+        add_action('wradmin_cleanup_agent_data', ['WRADMIN_Audit_Log', 'cleanup_expired']);
         add_action('wp_initialize_site', [self::class, 'initialize_new_site'], 20, 1);
-        if (!wp_next_scheduled('waa_cleanup_agent_data')) {
-            wp_schedule_event(time() + HOUR_IN_SECONDS, 'daily', 'waa_cleanup_agent_data');
+        if (!wp_next_scheduled('wradmin_cleanup_agent_data')) {
+            wp_schedule_event(time() + HOUR_IN_SECONDS, 'daily', 'wradmin_cleanup_agent_data');
         }
     }
 
@@ -37,7 +49,7 @@ class WAA_Plugin {
 
     public static function initialize_new_site(WP_Site $site): void {
         require_once ABSPATH . 'wp-admin/includes/plugin.php';
-        if (!is_plugin_active_for_network(plugin_basename(WAA_PLUGIN_DIR . 'wp-admin-agent.php'))) {
+        if (!is_plugin_active_for_network(plugin_basename(WRADMIN_PLUGIN_DIR . 'wp-admin-agent.php'))) {
             return;
         }
 
@@ -53,8 +65,8 @@ class WAA_Plugin {
         global $wpdb;
         $charset = $wpdb->get_charset_collate();
         $prefix = $site_id !== null ? $wpdb->get_blog_prefix($site_id) : $wpdb->prefix;
-        $logs_table = $prefix . 'waa_logs';
-        $conversations_table = $prefix . 'waa_conversations';
+        $logs_table = $prefix . 'wradmin_logs';
+        $conversations_table = $prefix . 'wradmin_conversations';
         require_once ABSPATH . 'wp-admin/includes/upgrade.php';
 
         dbDelta("CREATE TABLE {$logs_table} (
@@ -86,10 +98,82 @@ class WAA_Plugin {
             KEY idx_user_id (user_id)
         ) $charset;");
 
-        update_option('waa_db_version', WAA_VERSION);
-        if (!wp_next_scheduled('waa_cleanup_agent_data')) {
-            wp_schedule_event(time() + HOUR_IN_SECONDS, 'daily', 'waa_cleanup_agent_data');
+        if (!self::migrate_legacy_data($prefix)) {
+            return;
         }
+
+        update_option('wradmin_db_version', WRADMIN_VERSION);
+        if (!wp_next_scheduled('wradmin_cleanup_agent_data')) {
+            wp_schedule_event(time() + HOUR_IN_SECONDS, 'daily', 'wradmin_cleanup_agent_data');
+        }
+    }
+
+    /** Preserve settings and history created by versions using the short waa prefix. */
+    private static function migrate_legacy_data(string $prefix): bool {
+        global $wpdb;
+
+        if (get_option('waa_db_version', null) === null) {
+            return true;
+        }
+
+        // dbDelta has created the target tables. Copy rows in one SQL statement
+        // per table and retain the legacy tables for rollback.
+        foreach (['logs', 'conversations'] as $suffix) {
+            $old = $prefix . 'waa_' . $suffix;
+            $new = $prefix . 'wradmin_' . $suffix;
+            if ($wpdb->get_var($wpdb->prepare('SHOW TABLES LIKE %s', $old)) !== $old) {
+                continue;
+            }
+            $old_count = (int) $wpdb->get_var($wpdb->prepare('SELECT COUNT(*) FROM %i', $old));
+            $new_count = (int) $wpdb->get_var($wpdb->prepare('SELECT COUNT(*) FROM %i', $new));
+            if ($old_count === 0) {
+                continue;
+            }
+            if ($new_count !== 0) {
+                $missing = (int) $wpdb->get_var($wpdb->prepare(
+                    'SELECT COUNT(*) FROM %i AS old_rows LEFT JOIN %i AS new_rows ON old_rows.id = new_rows.id WHERE new_rows.id IS NULL',
+                    $old,
+                    $new
+                ));
+                if ($missing !== 0) {
+                    return false;
+                }
+            } elseif (false === $wpdb->query($wpdb->prepare('INSERT INTO %i SELECT * FROM %i', $new, $old))) {
+                return false;
+            }
+        }
+
+        $legacy_options = [
+            'provider', 'model', 'api_key_enc', 'gemini_key_enc', 'ollama_url',
+            'custom_rules', 'disabled_tools', 'pexels_key_enc', 'debug_mode',
+            'delete_data_on_uninstall', 'data_retention_days', 'max_tokens',
+            'xmlrpc_disabled', 'hide_wp_version',
+        ];
+        foreach ($legacy_options as $suffix) {
+            $old = 'waa_' . $suffix;
+            $new = 'wradmin_' . $suffix;
+            $value = get_option($old, null);
+            if ($value !== null && get_option($new, null) === null) {
+                add_option($new, $value, '', false);
+            }
+        }
+
+        // Unconfirmed actions are short lived, but preserve them during an update.
+        $pending_pattern = $wpdb->esc_like('waa_pending_action_') . '%';
+        $pending_names = $wpdb->get_col($wpdb->prepare(
+            "SELECT option_name FROM %i WHERE option_name LIKE %s",
+            $wpdb->options,
+            $pending_pattern
+        ));
+        foreach ($pending_names as $old) {
+            $new = 'wradmin_' . substr($old, strlen('waa_'));
+            if (get_option($new, null) === null) {
+                add_option($new, get_option($old), '', false);
+            }
+        }
+
+        wp_clear_scheduled_hook('waa_cleanup_agent_data');
+        return true;
     }
 
     private static function for_each_site(callable $callback): void {
@@ -118,7 +202,7 @@ class WAA_Plugin {
             self::for_each_site(static function (int $site_id): void {
                 switch_to_blog((int) $site_id);
                 try {
-                    wp_clear_scheduled_hook('waa_cleanup_agent_data');
+                    wp_clear_scheduled_hook('wradmin_cleanup_agent_data');
                 } finally {
                     restore_current_blog();
                 }
@@ -126,7 +210,7 @@ class WAA_Plugin {
             return;
         }
 
-        wp_clear_scheduled_hook('waa_cleanup_agent_data');
+        wp_clear_scheduled_hook('wradmin_cleanup_agent_data');
     }
 
     private function register_admin_hooks(): void {
@@ -157,60 +241,60 @@ class WAA_Plugin {
             return;
         }
 
-        if (!current_user_can('manage_options') || !wp_verify_nonce($nonce, 'waa_settings')) {
+        if (!current_user_can('manage_options') || !wp_verify_nonce($nonce, 'wradmin_settings')) {
             return;
         }
 
-        $settings = new WAA_Settings();
+        $settings = new WRADMIN_Settings();
 
-        if (!empty($posted['waa_provider'])) {
-            $settings->set_provider(sanitize_text_field($posted['waa_provider']));
+        if (!empty($posted['wradmin_provider'])) {
+            $settings->set_provider(sanitize_text_field($posted['wradmin_provider']));
         }
 
-        if (!empty($posted['waa_model'])) {
-            $settings->set_model(sanitize_text_field($posted['waa_model']));
+        if (!empty($posted['wradmin_model'])) {
+            $settings->set_model(sanitize_text_field($posted['wradmin_model']));
         }
 
-        if (!empty($posted['waa_api_key']) && $posted['waa_api_key'] !== '••••••••') {
-            $settings->set_api_key(sanitize_text_field($posted['waa_api_key']));
+        if (!empty($posted['wradmin_api_key']) && $posted['wradmin_api_key'] !== '••••••••') {
+            $settings->set_api_key(sanitize_text_field($posted['wradmin_api_key']));
         }
 
-        if (!empty($posted['waa_gemini_key']) && $posted['waa_gemini_key'] !== '••••••••') {
-            $settings->set_gemini_api_key(sanitize_text_field($posted['waa_gemini_key']));
+        if (!empty($posted['wradmin_gemini_key']) && $posted['wradmin_gemini_key'] !== '••••••••') {
+            $settings->set_gemini_api_key(sanitize_text_field($posted['wradmin_gemini_key']));
         }
 
-        if (!empty($posted['waa_ollama_url'])) {
-            $settings->set_ollama_url(esc_url_raw($posted['waa_ollama_url']));
+        if (!empty($posted['wradmin_ollama_url'])) {
+            $settings->set_ollama_url(esc_url_raw($posted['wradmin_ollama_url']));
         }
 
-        if (isset($posted['waa_debug_mode'])) {
-            $settings->set_debug_mode(sanitize_key($posted['waa_debug_mode']));
+        if (isset($posted['wradmin_debug_mode'])) {
+            $settings->set_debug_mode(sanitize_key($posted['wradmin_debug_mode']));
         }
 
         $tab = isset($posted['tab']) ? sanitize_key($posted['tab']) : '';
         if ($tab === 'provider') {
-            $settings->set_delete_data_on_uninstall(isset($posted['waa_delete_data_on_uninstall']));
-            if (isset($posted['waa_data_retention_days'])) {
-                $settings->set_data_retention_days((int) $posted['waa_data_retention_days']);
+            $settings->set_delete_data_on_uninstall(isset($posted['wradmin_delete_data_on_uninstall']));
+            if (isset($posted['wradmin_data_retention_days'])) {
+                $settings->set_data_retention_days((int) $posted['wradmin_data_retention_days']);
             }
         }
 
         // Custom rules (textarea — may be empty, that's valid)
-        if (isset($posted['waa_custom_rules'])) {
-            $settings->set_custom_rules(sanitize_textarea_field($posted['waa_custom_rules']));
+        if (isset($posted['wradmin_custom_rules'])) {
+            $settings->set_custom_rules(sanitize_textarea_field($posted['wradmin_custom_rules']));
         }
 
         // Disabled tools are updated only when the Tools tab is submitted.
         // Otherwise, preserve the existing tool enable/disable state.
         if ($tab === 'tools') {
-            $submitted_enabled = array_keys(array_filter($posted, fn($k) => str_starts_with(sanitize_key($k), 'waa_tool_'), ARRAY_FILTER_USE_KEY));
-            $enabled_names     = array_map(fn($k) => substr($k, strlen('waa_tool_')), $submitted_enabled);
-            $all_tools         = array_column(WAA_REST_API::build_registry()->get_schemas(), 'name');
+            $submitted_enabled = array_keys(array_filter($posted, fn($k) => str_starts_with(sanitize_key($k), 'wradmin_tool_'), ARRAY_FILTER_USE_KEY));
+            $enabled_names     = array_map(fn($k) => substr($k, strlen('wradmin_tool_')), $submitted_enabled);
+            $all_tools         = array_column(WRADMIN_REST_API::build_registry()->get_schemas(), 'name');
             $disabled          = array_values(array_diff($all_tools, $enabled_names));
             $settings->set_disabled_tools($disabled);
         }
 
-        do_action('waa_admin_agent_save_settings', $tab, $settings, map_deep($posted, 'sanitize_text_field'));
+        do_action('wradmin_admin_agent_save_settings', $tab, $settings, map_deep($posted, 'sanitize_text_field'));
 
         wp_safe_redirect(add_query_arg('saved', '1', menu_page_url('wp-admin-agent', false)));
         exit;
@@ -219,29 +303,29 @@ class WAA_Plugin {
     public function enqueue_assets(string $hook_suffix = ''): void {
         if (!current_user_can('manage_options')) return;
 
-        $js_path = WAA_PLUGIN_DIR . 'assets/js/admin-agent.js';
-        $version = file_exists($js_path) ? filemtime($js_path) : WAA_VERSION;
+        $js_path = WRADMIN_PLUGIN_DIR . 'assets/js/admin-agent.js';
+        $version = file_exists($js_path) ? filemtime($js_path) : WRADMIN_VERSION;
 
         wp_enqueue_script(
-            'waa-admin-agent',
-            WAA_PLUGIN_URL . 'assets/js/admin-agent.js',
-            [],
+            'wradmin-admin-agent',
+            WRADMIN_PLUGIN_URL . 'assets/js/admin-agent.js',
+            ['wp-element'],
             $version,
             true
         );
 
-        $css_path = WAA_PLUGIN_DIR . 'assets/css/admin-agent.css';
+        $css_path = WRADMIN_PLUGIN_DIR . 'assets/css/admin-agent.css';
         if (file_exists($css_path)) {
             wp_enqueue_style(
-                'waa-admin-agent',
-                WAA_PLUGIN_URL . 'assets/css/admin-agent.css',
+                'wradmin-admin-agent',
+                WRADMIN_PLUGIN_URL . 'assets/css/admin-agent.css',
                 [],
                 $version
             );
         }
 
-        $settings = new WAA_Settings();
-        wp_localize_script('waa-admin-agent', 'waaData', [
+        $settings = new WRADMIN_Settings();
+        wp_localize_script('wradmin-admin-agent', 'wradminData', [
             'nonce'       => wp_create_nonce('wp_rest'),
             'restUrl'     => rest_url('wp-admin-agent/v1/'),
             'currentUser' => [
@@ -249,37 +333,37 @@ class WAA_Plugin {
                 'name' => wp_get_current_user()->display_name,
             ],
             'siteUrl'     => get_site_url(),
-            'version'     => WAA_VERSION,
+            'version'     => WRADMIN_VERSION,
             'provider'    => $settings->get_provider(),
             'model'       => $settings->get_model(),
-            'pricing'     => WAA_Pricing::all_for_js(),
+            'pricing'     => WRADMIN_Pricing::all_for_js(),
             'debugMode'   => $settings->get_debug_mode(),
-            'isPro'       => defined('WAA_PRO_VERSION'),
+            'isPro'       => defined('WRADMIN_PRO_VERSION'),
         ]);
 
         if ($hook_suffix !== 'settings_page_wp-admin-agent') {
             return;
         }
 
-        $settings_js_path  = WAA_PLUGIN_DIR . 'admin/settings-page.js';
-        $settings_css_path = WAA_PLUGIN_DIR . 'admin/settings-page.css';
+        $settings_js_path  = WRADMIN_PLUGIN_DIR . 'admin/settings-page.js';
+        $settings_css_path = WRADMIN_PLUGIN_DIR . 'admin/settings-page.css';
 
         wp_enqueue_script(
-            'waa-admin-agent-settings',
-            WAA_PLUGIN_URL . 'admin/settings-page.js',
-            ['waa-admin-agent'],
-            file_exists($settings_js_path) ? filemtime($settings_js_path) : WAA_VERSION,
+            'wradmin-admin-agent-settings',
+            WRADMIN_PLUGIN_URL . 'admin/settings-page.js',
+            ['wradmin-admin-agent'],
+            file_exists($settings_js_path) ? filemtime($settings_js_path) : WRADMIN_VERSION,
             true
         );
         wp_enqueue_style(
-            'waa-admin-agent-settings',
-            WAA_PLUGIN_URL . 'admin/settings-page.css',
+            'wradmin-admin-agent-settings',
+            WRADMIN_PLUGIN_URL . 'admin/settings-page.css',
             [],
-            file_exists($settings_css_path) ? filemtime($settings_css_path) : WAA_VERSION
+            file_exists($settings_css_path) ? filemtime($settings_css_path) : WRADMIN_VERSION
         );
 
         $docs = [];
-        foreach (glob(WAA_PLUGIN_DIR . 'knowledge-base/*.md') as $path) {
+        foreach (glob(WRADMIN_PLUGIN_DIR . 'knowledge-base/*.md') as $path) {
             $filename = basename($path);
             if (str_starts_with($filename, '.')) {
                 continue;
@@ -293,10 +377,10 @@ class WAA_Plugin {
         }
         usort($docs, fn($left, $right) => strcmp($left['file'], $right['file']));
 
-        wp_localize_script('waa-admin-agent-settings', 'waaSettingsData', [
+        wp_localize_script('wradmin-admin-agent-settings', 'wradminSettingsData', [
             'provider' => $settings->get_provider(),
             'model'    => $settings->get_model(),
-            'pricing'  => WAA_Pricing::all_for_js(),
+            'pricing'  => WRADMIN_Pricing::all_for_js(),
             'docs'     => array_map(
                 fn($doc) => ['label' => $doc['label'], 'content' => $doc['content']],
                 $docs
@@ -306,7 +390,7 @@ class WAA_Plugin {
 
     public function inject_mount_point(): void {
         if (!current_user_can('manage_options')) return;
-        echo '<div id="waa-root"></div>';
+        echo '<div id="wradmin-root"></div>';
     }
 
     public function add_settings_page(): void {
@@ -316,7 +400,8 @@ class WAA_Plugin {
             'manage_options',
             'wp-admin-agent',
             function () {
-                require_once WAA_PLUGIN_DIR . 'admin/settings-page.php';
+                require_once WRADMIN_PLUGIN_DIR . 'admin/settings-page.php';
+                wradmin_render_settings_page();
             }
         );
     }
@@ -324,11 +409,11 @@ class WAA_Plugin {
     public function add_dashboard_widget(): void {
         if (!current_user_can('manage_options')) return;
         wp_add_dashboard_widget(
-            'waa_recent_actions',
+            'wradmin_recent_actions',
             'Recent Agent Actions',
             function () {
-                require_once WAA_PLUGIN_DIR . 'admin/dashboard-widget.php';
-                waa_render_dashboard_widget();
+                require_once WRADMIN_PLUGIN_DIR . 'admin/dashboard-widget.php';
+                wradmin_render_dashboard_widget();
             }
         );
     }
@@ -372,21 +457,21 @@ class WAA_Plugin {
         $offset = max(0, ($page - 1) * $limit);
         $conversations = $wpdb->get_results($wpdb->prepare(
             "SELECT id, title, messages, created_at, updated_at FROM %i WHERE user_id = %d ORDER BY id LIMIT %d OFFSET %d",
-            WAA_TABLE_CONVERSATIONS,
+            WRADMIN_TABLE_CONVERSATIONS,
             $user->ID,
             $limit,
             $offset
         ), ARRAY_A);
         $logs = $wpdb->get_results($wpdb->prepare(
             "SELECT id, tool_name, params, result, status, provider, model, created_at FROM %i WHERE user_id = %d ORDER BY id LIMIT %d OFFSET %d",
-            WAA_TABLE_LOGS,
+            WRADMIN_TABLE_LOGS,
             $user->ID,
             $limit,
             $offset
         ), ARRAY_A);
 
         $data = [];
-        $rest_api = new WAA_REST_API();
+        $rest_api = new WRADMIN_REST_API();
         foreach ($conversations as $row) {
             $conversation_data = $rest_api->decode_conversation_payload((string) $row['messages']);
             $data[] = [
@@ -432,8 +517,8 @@ class WAA_Plugin {
         }
 
         global $wpdb;
-        $conversations = $wpdb->delete(WAA_TABLE_CONVERSATIONS, ['user_id' => $user->ID], ['%d']);
-        $logs = $wpdb->delete(WAA_TABLE_LOGS, ['user_id' => $user->ID], ['%d']);
+        $conversations = $wpdb->delete(WRADMIN_TABLE_CONVERSATIONS, ['user_id' => $user->ID], ['%d']);
+        $logs = $wpdb->delete(WRADMIN_TABLE_LOGS, ['user_id' => $user->ID], ['%d']);
 
         return [
             'items_removed' => ($conversations + $logs) > 0,

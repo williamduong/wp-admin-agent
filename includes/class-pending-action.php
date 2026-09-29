@@ -9,8 +9,8 @@ defined('ABSPATH') || exit;
  * recovered from WordPress storage after the action has been claimed for the
  * same user and conversation.
  */
-class WAA_Pending_Action {
-    private const OPTION_PREFIX = 'waa_pending_action_';
+class WRADMIN_Pending_Action {
+    private const OPTION_PREFIX = 'wradmin_pending_action_';
     private const TTL_SECONDS = 10 * MINUTE_IN_SECONDS;
 
     public static function create(

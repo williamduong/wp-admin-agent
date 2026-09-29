@@ -2,14 +2,14 @@
 
 defined('ABSPATH') || exit;
 
-class WAA_Audit_Log {
+class WRADMIN_Audit_Log {
     public function write(string $tool, array $params, array $result, array $meta = []): void {
         global $wpdb;
-        $wpdb->insert(WAA_TABLE_LOGS, [
+        $wpdb->insert(WRADMIN_TABLE_LOGS, [
             'user_id'       => get_current_user_id(),
             'tool_name'     => $tool,
-            'params'        => wp_json_encode(WAA_Data_Sanitizer::sanitize($params)),
-            'result'        => wp_json_encode(WAA_Data_Sanitizer::sanitize($result)),
+            'params'        => wp_json_encode(WRADMIN_Data_Sanitizer::sanitize($params)),
+            'result'        => wp_json_encode(WRADMIN_Data_Sanitizer::sanitize($result)),
             'status'        => isset($result['error']) ? 'error' : 'success',
             'provider'      => $meta['provider']      ?? '',
             'model'         => $meta['model']         ?? '',
@@ -21,20 +21,20 @@ class WAA_Audit_Log {
 
     public static function cleanup_expired(): void {
         global $wpdb;
-        $days = (new WAA_Settings())->get_data_retention_days();
+        $days = (new WRADMIN_Settings())->get_data_retention_days();
         $cutoff = wp_date('Y-m-d H:i:s', time() - ($days * DAY_IN_SECONDS), wp_timezone());
         $wpdb->query($wpdb->prepare(
             'DELETE FROM %i WHERE created_at < %s',
-            WAA_TABLE_LOGS,
+            WRADMIN_TABLE_LOGS,
             $cutoff
         ));
         $wpdb->query($wpdb->prepare(
             'DELETE FROM %i WHERE updated_at < %s',
-            WAA_TABLE_CONVERSATIONS,
+            WRADMIN_TABLE_CONVERSATIONS,
             $cutoff
         ));
 
-        $like = $wpdb->esc_like('waa_pending_action_') . '%';
+        $like = $wpdb->esc_like('wradmin_pending_action_') . '%';
         $pending = $wpdb->get_results($wpdb->prepare(
             "SELECT option_name, option_value FROM %i WHERE option_name LIKE %s",
             $wpdb->options,
@@ -52,7 +52,7 @@ class WAA_Audit_Log {
         global $wpdb;
         return $wpdb->get_results($wpdb->prepare(
             "SELECT * FROM %i ORDER BY created_at DESC LIMIT %d",
-            WAA_TABLE_LOGS,
+            WRADMIN_TABLE_LOGS,
             $limit
         ));
     }
@@ -70,7 +70,7 @@ class WAA_Audit_Log {
                 SUM(CASE WHEN status='error' THEN 1 ELSE 0 END) AS total_errors
              FROM %i
              WHERE created_at >= DATE_SUB(NOW(), INTERVAL %d DAY)",
-            WAA_TABLE_LOGS,
+            WRADMIN_TABLE_LOGS,
             $days
         ), ARRAY_A);
 
@@ -86,7 +86,7 @@ class WAA_Audit_Log {
                AND model != ''
              GROUP BY provider, model
              ORDER BY calls DESC",
-            WAA_TABLE_LOGS,
+            WRADMIN_TABLE_LOGS,
             $days
         ), ARRAY_A);
 
@@ -101,7 +101,7 @@ class WAA_Audit_Log {
              WHERE created_at >= DATE_SUB(NOW(), INTERVAL 7 DAY)
              GROUP BY DATE(created_at)
              ORDER BY day ASC",
-            WAA_TABLE_LOGS
+            WRADMIN_TABLE_LOGS
         ),
             ARRAY_A
         );
@@ -114,14 +114,14 @@ class WAA_Audit_Log {
              GROUP BY tool_name
              ORDER BY calls DESC
              LIMIT 10",
-            WAA_TABLE_LOGS,
+            WRADMIN_TABLE_LOGS,
             $days
         ), ARRAY_A);
 
         // Enrich by_model with cost
-        $settings = new WAA_Settings();
+        $settings = new WRADMIN_Settings();
         foreach ($by_model as &$row) {
-            $row['cost_usd'] = WAA_Pricing::calculate(
+            $row['cost_usd'] = WRADMIN_Pricing::calculate(
                 $row['provider'],
                 $row['model'],
                 (int) $row['input_tokens'],

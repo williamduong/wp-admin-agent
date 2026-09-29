@@ -2,7 +2,7 @@
 
 defined('ABSPATH') || exit;
 
-class WAA_Wizard_Registry {
+class WRADMIN_Wizard_Registry {
     public static function get(string $wizard_id): ?array {
         return match ($wizard_id) {
             'woocommerce_first_time_setup' => [

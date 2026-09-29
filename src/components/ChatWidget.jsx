@@ -75,7 +75,7 @@ export default function ChatWidget({ isOpen, onToggle }) {
                             </span>
                         </div>
                         <div className={styles.headerActions}>
-                            {window.waaData?.isPro && (
+                            {window.wradminData?.isPro && (
                                 <button
                                     className={styles.iconBtn}
                                     onClick={() => startWorkflow('woocommerce_first_time_setup')}

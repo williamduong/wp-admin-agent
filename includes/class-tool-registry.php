@@ -2,7 +2,7 @@
 
 defined('ABSPATH') || exit;
 
-class WAA_Tool_Registry {
+class WRADMIN_Tool_Registry {
     private array $tools = [];
 
     private const BLOCKED = ['delete_site', 'wp_delete_user_self', 'update_core'];
@@ -11,7 +11,7 @@ class WAA_Tool_Registry {
         private readonly array $disabled = []
     ) {}
 
-    public function register(WAA_Tool_Base $tool): void {
+    public function register(WRADMIN_Tool_Base $tool): void {
         $name = $tool->get_name();
         if (!in_array($name, self::BLOCKED, true) && !in_array($name, $this->disabled, true)) {
             $this->tools[$name] = $tool;
