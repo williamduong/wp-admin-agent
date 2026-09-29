@@ -118,10 +118,11 @@ class WRADMIN_Plugin {
 
         // dbDelta has created the target tables. Copy rows in one SQL statement
         // per table and retain the legacy tables for rollback.
+        $existing_tables = $wpdb->get_col('SHOW TABLES');
         foreach (['logs', 'conversations'] as $suffix) {
             $old = $prefix . 'waa_' . $suffix;
             $new = $prefix . 'wradmin_' . $suffix;
-            if ($wpdb->get_var($wpdb->prepare('SHOW TABLES LIKE %s', $wpdb->esc_like($old))) !== $old) {
+            if (!in_array($old, $existing_tables, true)) {
                 continue;
             }
             $old_count = (int) $wpdb->get_var($wpdb->prepare('SELECT COUNT(*) FROM %i', $old));
