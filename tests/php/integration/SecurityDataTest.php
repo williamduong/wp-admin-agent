@@ -141,7 +141,6 @@ class SecurityDataTest extends WP_UnitTestCase {
 
         try {
             $this->assertSame('42', (string) $wpdb->get_var($wpdb->prepare('SELECT id FROM %i', $old)));
-            $this->assertContains($old, $wpdb->get_col('SHOW TABLES'));
             $method = new ReflectionMethod(WRADMIN_Plugin::class, 'migrate_legacy_data');
             $this->assertTrue($method->invoke(null, $prefix));
             $this->assertSame('existing-secret', (new WRADMIN_Settings())->get_api_key());
