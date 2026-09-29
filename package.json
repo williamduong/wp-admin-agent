@@ -18,7 +18,7 @@
     "lint": "eslint src admin/settings-page.js --ext .js,.jsx"
   },
   "devDependencies": {
-    "@playwright/test": "^1.44.0",
+    "@playwright/test": "^1.63.0",
     "@wp-playground/cli": "3.1.55",
     "@testing-library/jest-dom": "^6.4.2",
     "@testing-library/react": "^15.0.7",
