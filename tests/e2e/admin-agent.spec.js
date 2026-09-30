@@ -92,3 +92,34 @@ test('prefix upgrade preserves encrypted settings and database rows', async ({ p
         data: { migrated: true, key: 'preserved-key', row: 42 },
     });
 });
+
+test('guided setup saves personality, tests safe tools, and opens the named bot', async ({ page }) => {
+    await page.goto('/wp-admin/options-general.php?page=wp-admin-agent-setup');
+    await expect(page.getByRole('heading', { name: 'Let’s make your assistant yours.' })).toBeVisible();
+    await page.getByRole('button', { name: 'Let’s begin' }).click();
+
+    await page.locator('#wradmin-bot-name').fill('Orbit');
+    await page.locator('#wradmin-user-title').fill('William');
+    await page.getByLabel('Professional').check();
+    await expect(page.locator('#wradmin-preview-name')).toHaveText('Orbit');
+    await page.getByRole('button', { name: 'Continue' }).click();
+
+    await page.locator('#wradmin-setup-provider').selectOption('fake');
+    await page.getByRole('button', { name: 'Continue' }).click();
+    await page.getByRole('button', { name: 'Save & test drive' }).click();
+
+    await expect(page.getByRole('heading', { name: 'Time for a tiny test drive.' })).toBeVisible();
+    await page.getByRole('button', { name: 'Test connection' }).click();
+    await expect(page.locator('[data-wradmin-result="connection"]')).toContainText('✓');
+    await page.getByRole('button', { name: 'Test site tool' }).click();
+    await expect(page.locator('[data-wradmin-result="get_site_settings"]')).toContainText('✓');
+    await page.getByRole('button', { name: 'Finish setup' }).click();
+
+    await expect(page.getByRole('heading', { name: 'Meet Orbit.' })).toBeVisible();
+    await page.getByRole('button', { name: 'Say hello to your bot' }).click();
+    await expect(page.getByRole('dialog', { name: 'Orbit' })).toBeVisible();
+
+    await page.goto('/wp-admin/options-general.php?page=wp-admin-agent-setup');
+    await page.getByRole('button', { name: 'Let’s begin' }).click();
+    await expect(page.locator('#wradmin-bot-name')).toHaveValue('Orbit');
+});

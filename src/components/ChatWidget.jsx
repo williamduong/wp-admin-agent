@@ -26,6 +26,7 @@ function findLatestQueuedTask(messages) {
 }
 
 export default function ChatWidget({ isOpen, onToggle }) {
+    const botName = window.wradminData?.botName || 'William Research Admin Agent';
     const {
         messages, isLoading, activeToolName, sessionUsage, conversationId,
         pendingConfirmation, confirmPendingAction, cancelPendingAction,
@@ -59,17 +60,17 @@ export default function ChatWidget({ isOpen, onToggle }) {
                 className={styles.toggleBtn}
                 onClick={onToggle}
                 aria-label={isOpen ? 'Close AI assistant' : 'Open AI assistant'}
-                title="William Research Admin Agent"
+                title={botName}
             >
                 {isOpen ? '✕' : '🤖'}
             </button>
 
             {/* Chat panel */}
             {isOpen && (
-                <div className={styles.panel} ref={panelRef} role="dialog" aria-label="William Research Admin Agent">
+                <div className={styles.panel} ref={panelRef} role="dialog" aria-label={botName}>
                     <div className={styles.header}>
                         <div className={styles.headerIdentity}>
-                            <span className={styles.headerTitle}>🤖 William Research Admin Agent</span>
+                            <span className={styles.headerTitle}>🤖 {botName}</span>
                             <span className={styles.headerMeta}>
                                 {conversationId ? `Session #${conversationId}` : 'Session chưa được tạo'}
                             </span>
