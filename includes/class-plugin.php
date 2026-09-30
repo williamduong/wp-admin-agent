@@ -23,6 +23,7 @@ class WRADMIN_Plugin {
             }
         }
         new WRADMIN_REST_API();
+        WRADMIN_Onboarding::register();
         $this->register_admin_hooks();
         add_action('wradmin_cleanup_agent_data', ['WRADMIN_Audit_Log', 'cleanup_expired']);
         add_action('wp_initialize_site', [self::class, 'initialize_new_site'], 20, 1);
@@ -63,6 +64,9 @@ class WRADMIN_Plugin {
 
     private static function install_for_current_site(?int $site_id = null): void {
         global $wpdb;
+        if (get_option('wradmin_db_version', null) === null && get_option('waa_db_version', null) === null) {
+            add_option('wradmin_onboarding_status', 'pending', '', false);
+        }
         $charset = $wpdb->get_charset_collate();
         $prefix = $site_id !== null ? $wpdb->get_blog_prefix($site_id) : $wpdb->prefix;
         $logs_table = $prefix . 'wradmin_logs';
@@ -283,6 +287,15 @@ class WRADMIN_Plugin {
         }
 
         // Custom rules (textarea — may be empty, that's valid)
+        if (isset($posted['wradmin_bot_name'])) {
+            $settings->set_bot_name((string) $posted['wradmin_bot_name']);
+        }
+        if (isset($posted['wradmin_user_title'])) {
+            $settings->set_user_title((string) $posted['wradmin_user_title']);
+        }
+        if (isset($posted['wradmin_bot_style'])) {
+            $settings->set_bot_style(sanitize_key((string) $posted['wradmin_bot_style']));
+        }
         if (isset($posted['wradmin_custom_rules'])) {
             $settings->set_custom_rules(sanitize_textarea_field($posted['wradmin_custom_rules']));
         }
@@ -342,6 +355,7 @@ class WRADMIN_Plugin {
             'pricing'     => WRADMIN_Pricing::all_for_js(),
             'debugMode'   => $settings->get_debug_mode(),
             'isPro'       => defined('WRADMIN_PRO_VERSION'),
+            'botName'     => $settings->get_bot_name(),
         ]);
 
         if ($hook_suffix !== 'settings_page_wp-admin-agent') {
@@ -431,7 +445,7 @@ class WRADMIN_Plugin {
             'william-research-admin-agent'
         ) . '</p>';
         $content .= '<p>' . esc_html__(
-            'Provider credentials are encrypted before storage using WordPress security keys. Site owners should document their selected provider, configure an appropriate retention period, and avoid sending unnecessary personal or confidential information.',
+            'Provider credentials are encrypted before storage using WordPress security keys. The assistant name, preferred form of address, and communication style are stored in site options and included in prompts sent to the selected AI provider. Site owners should document their selected provider, configure an appropriate retention period, and avoid sending unnecessary personal or confidential information.',
             'william-research-admin-agent'
         ) . '</p>';
 

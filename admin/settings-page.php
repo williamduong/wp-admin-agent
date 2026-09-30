@@ -50,6 +50,7 @@ $navigate_map = [
 ?>
 <div class="wrap">
     <h1>William Research Admin Agent — Settings</h1>
+    <p><a href="<?php echo esc_url(WRADMIN_Onboarding::url()); ?>"><?php esc_html_e('Open the guided bot setup', 'william-research-admin-agent'); ?></a></p>
 
     <?php // phpcs:ignore WordPress.Security.NonceVerification.Recommended -- Read-only success notice after a nonce-protected save. ?>
     <?php if (isset($_GET['saved'])): ?>
@@ -196,6 +197,11 @@ $navigate_map = [
                 <!-- ══════════ TAB: PROMPT ══════════ -->
                 <?php elseif ($active_tab === 'prompt'): ?>
                 <input type="hidden" name="tab" value="prompt">
+
+                <h3><?php esc_html_e('Bot personality', 'william-research-admin-agent'); ?></h3>
+                <p><label for="wradmin_bot_name"><?php esc_html_e('Bot name', 'william-research-admin-agent'); ?></label><br><input class="regular-text" id="wradmin_bot_name" name="wradmin_bot_name" maxlength="40" value="<?php echo esc_attr($settings->get_bot_name()); ?>"></p>
+                <p><label for="wradmin_user_title"><?php esc_html_e('Call me', 'william-research-admin-agent'); ?></label><br><input class="regular-text" id="wradmin_user_title" name="wradmin_user_title" maxlength="40" value="<?php echo esc_attr($settings->get_user_title()); ?>"></p>
+                <p><label for="wradmin_bot_style"><?php esc_html_e('Communication style', 'william-research-admin-agent'); ?></label><br><select id="wradmin_bot_style" name="wradmin_bot_style"><?php foreach (['friendly' => 'Friendly', 'concise' => 'Concise', 'professional' => 'Professional', 'coach' => 'Helpful coach'] as $value => $label): ?><option value="<?php echo esc_attr($value); ?>" <?php selected($settings->get_bot_style(), $value); ?>><?php echo esc_html($label); ?></option><?php endforeach; ?></select></p>
 
                 <h3 style="margin-top:0">System Prompt</h3>
                 <p class="description" style="margin-bottom:16px">

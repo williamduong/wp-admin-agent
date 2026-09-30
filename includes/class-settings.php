@@ -84,6 +84,35 @@ class WRADMIN_Settings {
         update_option('wradmin_custom_rules', sanitize_textarea_field($rules));
     }
 
+    public function get_bot_name(): string {
+        $name = trim((string) get_option('wradmin_bot_name', 'William Research Admin Agent'));
+        return $name !== '' ? $name : 'William Research Admin Agent';
+    }
+
+    public function set_bot_name(string $name): void {
+        $name = trim(wp_html_excerpt(sanitize_text_field($name), 40, ''));
+        update_option('wradmin_bot_name', $name !== '' ? $name : 'William Research Admin Agent', false);
+    }
+
+    public function get_user_title(): string {
+        return (string) get_option('wradmin_user_title', '');
+    }
+
+    public function set_user_title(string $title): void {
+        update_option('wradmin_user_title', wp_html_excerpt(sanitize_text_field($title), 40, ''), false);
+    }
+
+    public function get_bot_style(): string {
+        $style = (string) get_option('wradmin_bot_style', 'friendly');
+        return in_array($style, ['friendly', 'concise', 'professional', 'coach'], true) ? $style : 'friendly';
+    }
+
+    public function set_bot_style(string $style): void {
+        if (in_array($style, ['friendly', 'concise', 'professional', 'coach'], true)) {
+            update_option('wradmin_bot_style', $style, false);
+        }
+    }
+
     // --- Disabled tools ---
 
     public function get_disabled_tools(): array {

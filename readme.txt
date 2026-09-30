@@ -4,7 +4,7 @@ Tags: ai assistant, admin, automation, woocommerce, ollama
 Requires at least: 6.5
 Tested up to: 7.1
 Requires PHP: 8.2
-Stable tag: 0.4.4
+Stable tag: 0.5.0
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -23,6 +23,7 @@ The Free edition focuses on safe workflows:
 * Store conversation history and execution metadata in WordPress.
 * Disable tools that a site does not need.
 * Encrypt provider credentials using WordPress security keys.
+* Guide new administrators through a short setup for bot personality, provider, allowed tools, and safe checks.
 
 The plugin requires a WordPress administrator account with the `manage_options` capability. It does not expose the assistant to public site visitors.
 
@@ -32,7 +33,7 @@ The human-readable source for the compiled admin interface and the packaging scr
 
 = External services =
 
-The plugin does not contact an AI provider until an administrator selects and configures one. Sending a chat request can transmit the administrator's prompt, recent conversation context, registered tool schemas, tool results, and relevant WordPress site information to the selected provider so it can answer the request and select tools.
+The plugin does not contact an AI provider until an administrator selects and configures one and starts a chat or connection test. Sending a chat request can transmit the administrator's prompt, recent conversation context, registered tool schemas, tool results, relevant WordPress site information, and the selected bot name, form of address, and communication style to the selected provider so it can answer the request and select tools.
 
 Anthropic API
 
@@ -91,10 +92,9 @@ Freemius
 
 1. Upload the `william-research-admin-agent` directory to `/wp-content/plugins/`, or install an official release.
 2. Activate **William Research Admin Agent** through the Plugins screen.
-3. Open **Settings → William Research Admin Agent**.
-4. Select and configure Anthropic, Gemini, or Ollama.
-5. Test the provider connection.
-6. Review enabled tools before using the assistant.
+3. Follow the guided **Settings → Agent Setup** wizard to name the bot and choose its style.
+4. Select and configure Anthropic, Gemini, or Ollama; then review enabled tools.
+5. Test the provider connection and read-only tools. The wizard can be reopened later.
 
 == Frequently Asked Questions ==
 
@@ -125,8 +125,15 @@ The Free edition does not send product telemetry by default. Calls required to f
 3. Provider and model settings.
 4. Tool registry and enable/disable controls.
 5. Built-in documentation.
+6. Guided assistant setup with personality, provider, tools, and safe test drive.
 
 == Changelog ==
+
+= 0.5.0 =
+
+* Added a guided first-run setup for assistant identity, AI connection, tool access, and retention.
+* Added safe read-only tool checks and an AI connection test before completing setup.
+* Made the chosen assistant name and communication style available in the chat and runtime prompt.
 
 = 0.4.4 =
 

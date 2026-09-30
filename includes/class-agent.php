@@ -100,6 +100,18 @@ class WRADMIN_Agent {
         }
 
         $custom_rules = $settings->get_custom_rules();
+        $bot_name = $settings->get_bot_name();
+        $user_title = $settings->get_user_title();
+        $style_instructions = [
+            'friendly' => 'Be warm, clear, and encouraging.',
+            'concise' => 'Keep replies brief and action-oriented.',
+            'professional' => 'Use a calm, professional tone.',
+            'coach' => 'Explain the next step and help the user learn as you work.',
+        ];
+        $base .= "\n\nAssistant identity (site administrator preference):\n"
+            . 'Your name: ' . $bot_name . "\n"
+            . ($user_title !== '' ? 'Address the administrator as: ' . $user_title . "\n" : '')
+            . 'Communication style: ' . $style_instructions[$settings->get_bot_style()];
         if ($custom_rules !== '') {
             $base .= "\n\nCustom rules (set by site administrator):\n" . $custom_rules;
         }
