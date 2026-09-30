@@ -124,7 +124,9 @@ class WRADMIN_Onboarding {
         $available = array_column(WRADMIN_REST_API::build_registry()->get_schemas(), 'name');
         $submitted = is_array($posted['wradmin_setup_tools'] ?? null) ? $posted['wradmin_setup_tools'] : [];
         $enabled = array_intersect($available, array_map('sanitize_key', array_filter($submitted, 'is_string')));
-        $settings->set_disabled_tools(array_values(array_diff($available, $enabled)));
+        // Preserve choices for extension tools that are temporarily unavailable.
+        $unavailable_disabled = array_diff($settings->get_disabled_tools(), $available);
+        $settings->set_disabled_tools(array_values(array_merge($unavailable_disabled, array_diff($available, $enabled))));
         if (isset($posted['wradmin_data_retention_days'])) {
             $settings->set_data_retention_days((int) $posted['wradmin_data_retention_days']);
         }
