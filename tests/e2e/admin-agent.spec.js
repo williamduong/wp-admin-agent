@@ -94,30 +94,49 @@ test('prefix upgrade preserves encrypted settings and database rows', async ({ p
 });
 
 test('guided setup saves personality, tests safe tools, and opens the named bot', async ({ page }) => {
+    const capture = async (name) => {
+        if (process.env.WRADMIN_CAPTURE_DOCS === '1') {
+            await page.screenshot({ path: `docs/images/${name}.png`, fullPage: true });
+        }
+    };
+    if (process.env.WRADMIN_CAPTURE_DOCS === '1') {
+        await page.setViewportSize({ width: 1440, height: 900 });
+    }
     await page.goto('/wp-admin/options-general.php?page=wp-admin-agent-setup');
     await expect(page.getByRole('heading', { name: 'Let’s make your assistant yours.' })).toBeVisible();
+    await capture('onboarding-01-welcome');
     await page.getByRole('button', { name: 'Let’s begin' }).click();
 
     await page.locator('#wradmin-bot-name').fill('Orbit');
     await page.locator('#wradmin-user-title').fill('William');
     await page.getByLabel('Professional').check();
     await expect(page.locator('#wradmin-preview-name')).toHaveText('Orbit');
+    await capture('onboarding-02-personality');
     await page.getByRole('button', { name: 'Continue' }).click();
 
+    await page.locator('#wradmin-setup-provider').selectOption('gemini');
+    await capture('onboarding-03-connection');
     await page.locator('#wradmin-setup-provider').selectOption('fake');
     await page.getByRole('button', { name: 'Continue' }).click();
+    await page.locator('.wradmin-setup-tool-groups details').first().locator('summary').click();
+    await capture('onboarding-04-tools');
     await page.getByRole('button', { name: 'Save & test drive' }).click();
 
     await expect(page.getByRole('heading', { name: 'Time for a tiny test drive.' })).toBeVisible();
+    await page.waitForFunction(() => typeof window.wradminSetupData === 'object');
     await page.getByRole('button', { name: 'Test connection' }).click();
     await expect(page.locator('[data-wradmin-result="connection"]')).toContainText('✓');
     await page.getByRole('button', { name: 'Test site tool' }).click();
     await expect(page.locator('[data-wradmin-result="get_site_settings"]')).toContainText('✓');
+    await capture('onboarding-05-test-drive');
     await page.getByRole('button', { name: 'Finish setup' }).click();
 
     await expect(page.getByRole('heading', { name: 'Meet Orbit.' })).toBeVisible();
+    if (process.env.WRADMIN_CAPTURE_DOCS === '1') await page.waitForTimeout(700);
+    await capture('onboarding-06-ready');
     await page.getByRole('button', { name: 'Say hello to your bot' }).click();
     await expect(page.getByRole('dialog', { name: 'Orbit' })).toBeVisible();
+    await capture('onboarding-07-chat');
 
     await page.goto('/wp-admin/options-general.php?page=wp-admin-agent-setup');
     await page.getByRole('button', { name: 'Let’s begin' }).click();

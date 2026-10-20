@@ -33,9 +33,13 @@ npm ci
 npm run build
 ```
 
-## 3. Configure an AI provider
+## 3. Complete the guided setup
 
-Open **Settings → William Research Admin Agent**.
+New installations open the illustrated wizard automatically. You can reopen it at **Settings → Agent Setup** to name the bot, choose a communication style, connect a provider, review tool access, and run safe checks. See the [Vietnamese walkthrough with real screenshots](onboarding-guide-vi.md).
+
+## 4. Configure an AI provider
+
+The wizard includes provider setup. For later changes, open **Settings → Admin Agent**.
 
 ![Provider settings](images/03-provider-settings.png)
 
@@ -45,15 +49,15 @@ Choose one provider:
 - **Gemini** — enter a Google AI API key and select a Gemini model.
 - **Ollama** — enter the server URL and select an installed model. Keep private Ollama servers behind an authenticated network boundary.
 
-Use **Test connection** before saving. Provider credentials are encrypted at rest using WordPress key material and are not returned to the browser after storage.
+In the wizard, save your choices and use **Test connection** on the test-drive screen. On the advanced settings screen, you can test the live form values before saving. Provider credentials are encrypted at rest using WordPress key material and are not returned to the browser after storage.
 
-## 4. Review tool access
+## 5. Review tool access
 
 Open the **Tools** tab and disable tools the site does not require. Apply least privilege: a content-only workflow normally does not need plugin installation, theme changes, or user administration.
 
 ![Tool registry](images/04-tool-registry.png)
 
-## 5. Run a safe first request
+## 6. Run a safe first request
 
 Open the floating assistant and begin with a read-only request:
 
@@ -69,7 +73,7 @@ Create a draft post outline about our release process. Do not publish it.
 
 Inspect the proposed operation and result. Any destructive or high-impact action should require explicit confirmation.
 
-## 6. Production checklist
+## 7. Production checklist
 
 - Back up the database and `wp-content`.
 - Test on staging before production.

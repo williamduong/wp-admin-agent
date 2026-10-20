@@ -7,6 +7,7 @@ Public showcase: [William Research Admin Agent Free on Cloud Run](https://wp-adm
 ## Start here
 
 - [Getting Started](getting-started.md) — install, configure a provider, and complete a first safe workflow.
+- [Hướng dẫn wizard 0.5.0 (tiếng Việt)](onboarding-guide-vi.md) — ảnh chụp thật từng bước thiết lập và thử bot.
 - [User Guide](user-guide.md) — illustrated walkthrough of the assistant, settings, tools, history, and troubleshooting.
 - [Architecture](architecture.md) — system components, request lifecycle, REST/SSE interfaces, persistence, and MCP.
 - [Security](security.md) — authorization, secrets, confirmations, auditability, and production hardening.
